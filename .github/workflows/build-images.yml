@@ -1,0 +1,80 @@
+on:
+  workflow_call:
+    inputs:
+      push:
+        description: Should the images be pushed
+        default: false
+        required: false
+        type: boolean
+      version:
+        description: The version used when tagging the image
+        default: dev
+        required: false
+        type: string
+
+jobs:
+  build_and_push_images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      RELEASE_VERSION: "${{ github.event.release.tag_name }}"
+      DOCKERHUB_REPO: "otel/demo"
+      GHCR_REPO: "ghcr.io/open-telemetry/demo"
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        uses: tj-actions/changed-files@v37
+
+      - name: Create list of modified services
+        run: |
+          modified_services = []
+          for file in $(echo "${{ steps.changed_files.outputs.all_changed_files }}" | tr '\n' ' '):
+            if [[ $file =~ Dockerfile ]]; then
+              service_name=$(echo $file | awk -F '/' '{print $2}')
+              modified_services+=($service_name)
+            fi
+          echo "Modified services: ${modified_services}"
+
+      - name: Create list of services to build
+        run: |
+          services_to_build = []
+          for service_name in "${modified_services[@]}"; do
+            service_dir=$(echo $service_name | sed 's/\./\//g')
+            if [[ $(git diff --name-only $service_dir) ]]; then
+              services_to_build+=($service_name)
+            fi
+          done
+          echo "Services to build: ${services_to_build}"
+
+      - name: Update matrix
+        run: |
+          matrix.file_tag=()
+          for service_name in "${services_to_build[@]}"; do
+            matrix.file_tag+=(
+              file: ./src/$service_name/Dockerfile
+              tag_suffix: $service_name
+              context: ./
+            )
+          done
+          echo "Updated matrix:"
+          echo "${matrix.file_tag}"
+
+      - name: Matrix Build and push demo images
+        uses: docker/build-push-action@v3.3.0
+        with:
+          context: ${{ matrix.file_tag.context }}
+          file: ${{ matrix.file_tag.file }}
+          platforms: linux/amd64,linux/arm64
+          push: ${{ inputs.push }}
+          tags: |
+            ${{ env.DOCKERHUB_REPO }}:${{ inputs.version }}-${{matrix.file_tag.tag_suffix }}
+            ${{ env.GHCR_REPO }}:${{ inputs.version }}-${{ matrix.file_tag.tag_suffix }}
+          cache-from: type=gha
+          cache-to: type=gha
