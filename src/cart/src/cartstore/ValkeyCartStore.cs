@@ -68,7 +68,11 @@ public class ValkeyCartStore : ICartStore
                 return;
             }
 
-            _logger.LogDebug("Connecting to Redis: {_connectionString}", _connectionString);
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("Connecting to Redis: {connectionString}", _connectionString);
+            }
+
             _redis = ConnectionMultiplexer.Connect(_redisConnectionOptions);
 
             if (_redis == null || !_redis.IsConnected)
@@ -85,7 +89,11 @@ public class ValkeyCartStore : ICartStore
             _logger.LogDebug("Performing small test");
             cache.StringSet("cart", "OK" );
             object res = cache.StringGet("cart");
-            _logger.LogDebug("Small test result: {res}", res);
+
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("Small test result: {result}", res);
+            }
 
             _redis.InternalError += (_, e) => { Console.WriteLine(e.Exception); };
             _redis.ConnectionRestored += (_, _) =>
@@ -105,7 +113,12 @@ public class ValkeyCartStore : ICartStore
 
     public async Task AddItemAsync(string userId, string productId, int quantity)
     {
-        _logger.LogInformation($"AddItemAsync called with userId={userId}, productId={productId}, quantity={quantity}");
+        var stopwatch = Stopwatch.StartNew();
+
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("AddItemAsync called with userId={userId}, productId={productId}, quantity={quantity}", userId, productId, quantity);
+        }
 
         try
         {
@@ -150,8 +163,10 @@ public class ValkeyCartStore : ICartStore
 
     public async Task EmptyCartAsync(string userId)
     {
-        _logger.LogInformation($"EmptyCartAsync called with userId={userId}");
-
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("EmptyCartAsync called with userId={userId}", userId);
+        }
         try
         {
             EnsureRedisConnected();
@@ -169,7 +184,12 @@ public class ValkeyCartStore : ICartStore
 
     public async Task<Oteldemo.Cart> GetCartAsync(string userId)
     {
-        _logger.LogInformation($"GetCartAsync called with userId={userId}");
+        var stopwatch = Stopwatch.StartNew();
+
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("GetCartAsync called with userId={userId}", userId);
+        }
 
         try
         {
