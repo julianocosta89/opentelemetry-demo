@@ -185,6 +185,9 @@ services:
       - EMAIL_PORT
       - FLAGD_HOST
       - FLAGD_PORT
+    depends_on:
+      flagd:
+        condition: service_started
     logging: *logging
 
   # Fraud Detection service
@@ -196,8 +199,6 @@ services:
       dockerfile: ${FRAUD_DOCKERFILE}
       cache_from:
         - ${IMAGE_NAME}:${IMAGE_VERSION}-fraud-detection
-      args:
-        OTEL_JAVA_AGENT_VERSION: ${OTEL_JAVA_AGENT_VERSION}
     deploy:
       resources:
         limits:
@@ -207,14 +208,8 @@ services:
       - FLAGD_HOST
       - FLAGD_PORT
       - KAFKA_ADDR
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:${OTEL_COLLECTOR_PORT_HTTP}
-      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-      - OTEL_INSTRUMENTATION_KAFKA_EXPERIMENTAL_SPAN_ATTRIBUTES=true
-      - OTEL_INSTRUMENTATION_MESSAGING_EXPERIMENTAL_RECEIVE_TELEMETRY_ENABLED=true
-      - OTEL_RESOURCE_ATTRIBUTES
-      - OTEL_SERVICE_NAME=fraud-detection
     depends_on:
-      otel-collector:
+      flagd:
         condition: service_started
       kafka:
         condition: service_healthy
