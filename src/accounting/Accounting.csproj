@@ -20,7 +20,6 @@
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
-		<PackageReference Include="OpenTelemetry.AutoInstrumentation" Version="1.13.0" />
 	</ItemGroup>
 
 	<ItemGroup>
