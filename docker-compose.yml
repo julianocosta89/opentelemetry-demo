@@ -286,21 +286,6 @@ services:
       - "${ENVOY_PORT}:${ENVOY_PORT}"
       - "${ENVOY_ADMIN_PORT}:${ENVOY_ADMIN_PORT}"
     environment:
-      - FRONTEND_PORT
-      - FRONTEND_HOST
-      - LOCUST_WEB_HOST
-      - LOCUST_WEB_PORT
-      - GRAFANA_PORT
-      - GRAFANA_HOST
-      - JAEGER_UI_PORT
-      - JAEGER_HOST
-      - OTEL_COLLECTOR_HOST
-      - IMAGE_PROVIDER_HOST
-      - IMAGE_PROVIDER_PORT
-      - OTEL_COLLECTOR_PORT_GRPC
-      - OTEL_COLLECTOR_PORT_HTTP
-      - OTEL_RESOURCE_ATTRIBUTES
-      - OTEL_SERVICE_NAME=frontend-proxy
       - ENVOY_PORT
       - ENVOY_ADDR
       - ENVOY_ADMIN_PORT
@@ -308,14 +293,16 @@ services:
       - FLAGD_PORT
       - FLAGD_UI_HOST
       - FLAGD_UI_PORT
+      - FRONTEND_HOST
+      - FRONTEND_PORT
+      - IMAGE_PROVIDER_HOST
+      - IMAGE_PROVIDER_PORT
+      - LOCUST_WEB_HOST
+      - LOCUST_WEB_PORT
     depends_on:
       frontend:
         condition: service_started
       load-generator:
-        condition: service_started
-      jaeger:
-        condition: service_started
-      grafana:
         condition: service_started
       flagd-ui:
         condition: service_started
