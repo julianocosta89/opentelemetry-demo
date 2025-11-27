@@ -326,13 +326,6 @@ services:
       - "${IMAGE_PROVIDER_PORT}"
     environment:
       - IMAGE_PROVIDER_PORT
-      - OTEL_COLLECTOR_HOST
-      - OTEL_COLLECTOR_PORT_GRPC
-      - OTEL_RESOURCE_ATTRIBUTES
-      - OTEL_SERVICE_NAME=image-provider
-    depends_on:
-      otel-collector:
-        condition: service_started
     logging: *logging
 
   # Load Generator
