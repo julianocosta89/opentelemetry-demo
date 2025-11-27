@@ -290,17 +290,8 @@ services:
       - FRONTEND_HOST
       - LOCUST_WEB_HOST
       - LOCUST_WEB_PORT
-      - GRAFANA_PORT
-      - GRAFANA_HOST
-      - JAEGER_UI_PORT
-      - JAEGER_HOST
-      - OTEL_COLLECTOR_HOST
       - IMAGE_PROVIDER_HOST
       - IMAGE_PROVIDER_PORT
-      - OTEL_COLLECTOR_PORT_GRPC
-      - OTEL_COLLECTOR_PORT_HTTP
-      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.criticality=critical
-      - OTEL_SERVICE_NAME=frontend-proxy
       - ENVOY_PORT
       - ENVOY_ADDR
       - ENVOY_ADMIN_PORT
@@ -308,20 +299,12 @@ services:
       - FLAGD_PORT
       - FLAGD_UI_HOST
       - FLAGD_UI_PORT
-      - TELEMETRY_DOCS_HOST
-      - TELEMETRY_DOCS_PORT
     depends_on:
       frontend:
         condition: service_started
       load-generator:
         condition: service_started
-      jaeger:
-        condition: service_started
-      grafana:
-        condition: service_started
       flagd-ui:
-        condition: service_started
-      telemetry-docs:
         condition: service_started
     dns_search: ""
 
