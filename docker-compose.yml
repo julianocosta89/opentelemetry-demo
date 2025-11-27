@@ -473,16 +473,7 @@ services:
       - "${QUOTE_PORT}"
     environment:
       - IPV6_ENABLED
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:${OTEL_COLLECTOR_PORT_HTTP}
-      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-      - OTEL_PHP_AUTOLOAD_ENABLED=true
       - QUOTE_PORT
-      - OTEL_PHP_INTERNAL_METRICS_ENABLED=true
-      - OTEL_RESOURCE_ATTRIBUTES
-      - OTEL_SERVICE_NAME=quote
-    depends_on:
-      otel-collector:
-        condition: service_started
     logging: *logging
 
   # Recommendation service

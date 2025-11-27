@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-FROM ghcr.io/mlocati/php-extension-installer:2.9.11 AS installer
+FROM ghcr.io/mlocati/php-extension-installer:2.9.18 AS installer
 
-FROM docker.io/library/composer:2.8.12 AS vendor
+FROM docker.io/library/composer:2.9.2 AS vendor
 
 WORKDIR /tmp/
 
@@ -18,11 +18,11 @@ RUN composer install \
     --no-dev \
     --prefer-dist
 
-FROM docker.io/library/php:8.4-cli-alpine3.22
+FROM docker.io/library/php:8.5-cli-alpine3.22
 
 COPY --from=installer /usr/bin/install-php-extensions /usr/local/bin/
 
-RUN install-php-extensions opcache pcntl protobuf opentelemetry
+RUN install-php-extensions opcache pcntl protobuf
 
 WORKDIR /var/www
 
