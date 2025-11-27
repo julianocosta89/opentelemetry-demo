@@ -410,22 +410,12 @@ services:
       - FLAGD_HOST
       - FLAGD_PORT
       - GOMEMLIMIT=16MiB
-      - OTEL_EXPORTER_OTLP_ENDPOINT
-      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES},service.criticality=high
-      - OTEL_SERVICE_NAME=product-catalog
-      - OTEL_CONFIG_FILE=/otel-config.yml
-      - OTEL_SEMCONV_STABILITY_OPT_IN=database
       - DB_CONNECTION_STRING=postgres://astronomy_user:${POSTGRES_ASTRONOMY_PASSWORD}@${POSTGRES_HOST}/astronomy_db?sslmode=disable
     depends_on:
-      otel-collector:
-        condition: service_started
       flagd:
         condition: service_started
       astronomy-db:
         condition: service_started
-    volumes:
-      - ./otel-config.yml:/otel-config.yml
     logging: *logging
 
   # Product reviews service
