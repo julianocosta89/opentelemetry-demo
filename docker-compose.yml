@@ -384,13 +384,7 @@ services:
       - PAYMENT_PORT
       - FLAGD_HOST
       - FLAGD_PORT
-      - OTEL_EXPORTER_OTLP_ENDPOINT
-      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-      - OTEL_RESOURCE_ATTRIBUTES
-      - OTEL_SERVICE_NAME=payment
     depends_on:
-      otel-collector:
-        condition: service_started
       flagd:
         condition: service_started
     logging: *logging
