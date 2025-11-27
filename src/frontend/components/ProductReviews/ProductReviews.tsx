@@ -4,7 +4,7 @@
 import * as S from './ProductReviews.styled';
 import { useProductReview } from '../../providers/ProductReview.provider';
 import { useAiAssistant } from '../../providers/ProductAIAssistant.provider';
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { CypressFields } from '../../utils/enums/CypressFields';
 
 const clamp = (n: number, min = 0, max = 5) => Math.max(min, Math.min(max, n));

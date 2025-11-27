@@ -3,7 +3,7 @@
 The frontend is a [Next.js](https://nextjs.org/) application that is composed
 by two layers.
 
-1. Client side application. Which renders the components for the OTEL webstore.
+1. Client side application. Which renders the components for the webstore.
 2. API layer. Connects the client to the backend services by exposing REST endpoints.
 
 ## Build Locally

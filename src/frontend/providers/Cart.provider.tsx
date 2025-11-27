@@ -17,8 +17,8 @@ interface IContext {
 
 export const Context = createContext<IContext>({
   cart: { userId: '', items: [] },
-  addItem: () => {},
-  emptyCart: () => {},
+  addItem: () => {/* empty */},
+  emptyCart: () => {/* empty */},
   placeOrder: () => Promise.resolve({} as OrderResult),
 });
 

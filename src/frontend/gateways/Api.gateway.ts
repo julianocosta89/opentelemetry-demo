@@ -4,9 +4,7 @@
 import { Ad, Address, Cart, CartItem, Money, PlaceOrderRequest, Product, ProductReview } from '../protos/demo';
 import { IProductCart, IProductCartItem, IProductCheckout } from '../types/Cart';
 import request from '../utils/Request';
-import { AttributeNames } from '../utils/enums/AttributeNames';
 import SessionGateway from './Session.gateway';
-import { context, propagation } from "@opentelemetry/api";
 
 const { userId } = SessionGateway.getSession();
 
@@ -117,19 +115,7 @@ const ApiGateway = new Proxy(Apis(), {
   get(target, prop, receiver) {
     const originalFunction = Reflect.get(target, prop, receiver);
 
-    if (typeof originalFunction !== 'function') {
-      return originalFunction;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return function (...args: any[]) {
-      const baggage = propagation.getActiveBaggage() || propagation.createBaggage();
-      const newBaggage = baggage.setEntry(AttributeNames.SESSION_ID, { value: userId });
-      const newContext = propagation.setBaggage(context.active(), newBaggage);
-      return context.with(newContext, () => {
-        return Reflect.apply(originalFunction, undefined, args);
-      });
-    };
+    return originalFunction;
   },
 });
 

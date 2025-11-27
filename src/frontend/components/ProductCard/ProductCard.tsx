@@ -40,8 +40,8 @@ const ProductCard = ({
       method: "GET",
       headers: headers
     };
-    const image_url ='/images/products/' + picture
-    const requestInfo = new Request(image_url, requestInit);
+    const imageUrl ='/images/products/' + picture
+    const requestInfo = new Request(imageUrl, requestInit);
     getImageWithHeaders(requestInfo).then(blob => {
       setImageSrc(URL.createObjectURL(blob));
     });
