@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import InstrumentationMiddleware from '../../../../utils/telemetry/InstrumentationMiddleware';
-import {AddItemRequest, Empty} from '../../../../protos/demo';
+import { Empty } from '../../../../protos/demo';
 import ProductReviewService from '../../../../services/ProductReview.service';
 
 type TResponse = string | Empty;
@@ -26,4 +25,4 @@ const handler = async ({ method, body, query }: NextApiRequest, res: NextApiResp
     }
 };
 
-export default InstrumentationMiddleware(handler);
+export default handler;

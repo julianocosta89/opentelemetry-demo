@@ -54,4 +54,4 @@ describe('Product Detail Page', () => {
   });
 });
 
-export {};
+export {/* empty */};
