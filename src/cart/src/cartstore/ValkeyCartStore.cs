@@ -113,8 +113,6 @@ public class ValkeyCartStore : ICartStore
 
     public async Task AddItemAsync(string userId, string productId, int quantity)
     {
-        var stopwatch = Stopwatch.StartNew();
-
         if (_logger.IsEnabled(LogLevel.Information))
         {
             _logger.LogInformation("AddItemAsync called with userId={userId}, productId={productId}, quantity={quantity}", userId, productId, quantity);
@@ -184,8 +182,6 @@ public class ValkeyCartStore : ICartStore
 
     public async Task<Oteldemo.Cart> GetCartAsync(string userId)
     {
-        var stopwatch = Stopwatch.StartNew();
-
         if (_logger.IsEnabled(LogLevel.Information))
         {
             _logger.LogInformation("GetCartAsync called with userId={userId}", userId);

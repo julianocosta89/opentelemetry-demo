@@ -52,4 +52,4 @@ describe('Checkout Flow', () => {
   });
 });
 
-export {};
+export {/* empty */};

@@ -26,8 +26,8 @@ const Context = createContext<AiAssistantContextValue>({
     aiResponse: null,
     aiLoading: false,
     aiError: null,
-    sendAiRequest: () => {},
-    reset: () => {},
+    sendAiRequest: () => {/* empty */},
+    reset: () => {/* empty */},
 });
 
 export const useAiAssistant = () => useContext(Context);

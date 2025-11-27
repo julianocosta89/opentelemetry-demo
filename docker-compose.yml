@@ -242,14 +242,7 @@ services:
       - PRODUCT_REVIEWS_ADDR
       - RECOMMENDATION_ADDR
       - SHIPPING_ADDR
-      - OTEL_EXPORTER_OTLP_ENDPOINT
-      - OTEL_RESOURCE_ATTRIBUTES
       - ENV_PLATFORM
-      - OTEL_SERVICE_NAME=frontend
-      - PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-      - WEB_OTEL_SERVICE_NAME=frontend-web
-      - OTEL_COLLECTOR_HOST
       - FLAGD_HOST
       - FLAGD_PORT
     depends_on:
@@ -268,8 +261,6 @@ services:
       recommendation:
         condition: service_started
       shipping:
-        condition: service_started
-      otel-collector:
         condition: service_started
       image-provider:
         condition: service_started
