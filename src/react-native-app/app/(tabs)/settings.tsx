@@ -4,8 +4,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { ThemedView } from "@/components/ThemedView";
 import { StyleSheet } from "react-native";
 import { getFrontendProxyURL, setFrontendProxyURL } from "@/utils/Settings";
-import { setupTracerProvider } from "@/hooks/useTracer";
-import { trace } from "@opentelemetry/api";
 import { Setting } from "@/components/Setting";
 
 export default function Settings() {
@@ -16,11 +14,6 @@ export default function Settings() {
 
     // Clear any cached queries since we now have a new endpoint to hit for everything
     await queryClient.invalidateQueries();
-
-    // Need to setup a new tracer provider since the export URL for traces has now changed
-    trace.disable();
-    const provider = setupTracerProvider(value);
-    trace.setGlobalTracerProvider(provider);
   };
 
   return (

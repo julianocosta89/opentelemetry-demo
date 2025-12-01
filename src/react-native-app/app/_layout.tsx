@@ -12,7 +12,6 @@ import { RootSiblingParent } from "react-native-root-siblings";
 import Toast from "react-native-toast-message";
 import { useFonts } from "expo-font";
 import { useEffect, useMemo } from "react";
-import { useTracer } from "@/hooks/useTracer";
 import CartProvider from "@/providers/Cart.provider";
 
 const queryClient = new QueryClient();
@@ -22,11 +21,10 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
-  const { loaded: tracerLoaded } = useTracer();
 
   const loaded = useMemo<boolean>(
-    () => fontsLoaded && tracerLoaded,
-    [fontsLoaded, tracerLoaded],
+    () => fontsLoaded,
+    [fontsLoaded],
   );
   useEffect(() => {
     if (loaded) {
