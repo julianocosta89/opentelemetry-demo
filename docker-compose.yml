@@ -497,16 +497,9 @@ services:
       - PRODUCT_CATALOG_ADDR
       - FLAGD_HOST
       - FLAGD_PORT
-      - OTEL_PYTHON_LOG_CORRELATION=true
-      - OTEL_EXPORTER_OTLP_ENDPOINT
-      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-      - OTEL_RESOURCE_ATTRIBUTES
-      - OTEL_SERVICE_NAME=recommendation
       - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
     depends_on:
       product-catalog:
-        condition: service_started
-      otel-collector:
         condition: service_started
       flagd:
         condition: service_started
@@ -536,9 +529,6 @@ services:
       - OTEL_RESOURCE_ATTRIBUTES
       - OTEL_SERVICE_NAME=shipping
       - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-    depends_on:
-      otel-collector:
-        condition: service_started
     logging: *logging
 
   # ******************
@@ -597,8 +587,6 @@ services:
     ports:
       - "${FLAGD_UI_PORT}"
     depends_on:
-      otel-collector:
-        condition: service_started
       flagd:
         condition: service_started
     volumes:

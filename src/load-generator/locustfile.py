@@ -23,10 +23,9 @@ logger.setLevel(logging.INFO)
 
 handler = logging.StreamHandler()
 formatter = JsonFormatter(
-    fmt="%(asctime)s %(levelname)s %(message)s",
-    datefmt="%Y-%m-%dT%H:%M:%S",
-    rename_fields={"asctime": "timestamp"}
-)
+        fmt='%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] - %(message)s',
+        rename_fields={"asctime": "timestamp"}
+    )
 handler.setFormatter(formatter)
 
 logger.addHandler(handler)

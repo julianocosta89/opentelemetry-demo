@@ -134,15 +134,6 @@ clean-images:
         false; \
     fi
 
-.PHONY: run-tests
-run-tests:
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) -f docker-compose-tests.yml run frontendTests
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) -f docker-compose-tests.yml run traceBasedTests
-
-.PHONY: run-tracetesting
-run-tracetesting:
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) -f docker-compose-tests.yml run traceBasedTests ${SERVICES_TO_TEST}
-
 .PHONY: generate-protobuf
 generate-protobuf:
 	./ide-gen-proto.sh
@@ -206,7 +197,6 @@ start-minimal:
 .PHONY: stop
 stop:
 	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) down --remove-orphans --volumes
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) -f docker-compose-tests.yml down --remove-orphans --volumes
 	@echo ""
 	@echo "OpenTelemetry Demo is stopped."
 
