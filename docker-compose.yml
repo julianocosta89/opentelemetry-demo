@@ -525,10 +525,7 @@ services:
       - IPV6_ENABLED
       - SHIPPING_PORT
       - QUOTE_ADDR
-      - OTEL_EXPORTER_OTLP_ENDPOINT
-      - OTEL_RESOURCE_ATTRIBUTES
-      - OTEL_SERVICE_NAME=shipping
-      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+      - RUST_LOG=INFO
     logging: *logging
 
   # ******************
