@@ -36,12 +36,6 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  otel_endpoint =
-    System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") ||
-      raise """
-      environment variable OTEL_EXPORTER_OTLP_ENDPOINT is missing.
-      """
-
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("FLAGD_UI_PORT") || "4000")
 
@@ -59,11 +53,6 @@ if config_env() == :prod do
     ],
     check_origin: false,
     secret_key_base: secret_key_base
-
-  config :opentelemetry, :processors,
-    otel_batch_processor: %{
-      exporter: {:opentelemetry_exporter, %{endpoints: [otel_endpoint]}}
-    }
 
   # ## SSL Support
   #

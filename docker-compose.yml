@@ -541,11 +541,7 @@ services:
           memory: 75M
     restart: unless-stopped
     environment:
-      - FLAGD_OTEL_COLLECTOR_URI=${OTEL_COLLECTOR_HOST}:${OTEL_COLLECTOR_PORT_GRPC}
-      - FLAGD_METRICS_EXPORTER=otel
       - GOMEMLIMIT=60MiB
-      - OTEL_RESOURCE_ATTRIBUTES
-      - OTEL_SERVICE_NAME=flagd
     command: [
       "start",
       "--uri",
@@ -575,10 +571,6 @@ services:
     restart: always
     environment:
       - FLAGD_UI_PORT
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:${OTEL_COLLECTOR_PORT_HTTP}
-      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-      - OTEL_RESOURCE_ATTRIBUTES
-      - OTEL_SERVICE_NAME=flagd-ui
       - SECRET_KEY_BASE=yYrECL4qbNwleYInGJYvVnSkwJuSQJ4ijPTx5tirGUXrbznFIBFVJdPl5t6O9ASw
       - PHX_HOST=localhost
     ports:
@@ -598,8 +590,6 @@ services:
       dockerfile: ${KAFKA_DOCKERFILE}
       cache_from:
         - ${IMAGE_NAME}:${IMAGE_VERSION}-kafka
-      args:
-        OTEL_JAVA_AGENT_VERSION: ${OTEL_JAVA_AGENT_VERSION}
     deploy:
       resources:
         limits:
@@ -609,10 +599,6 @@ services:
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://${KAFKA_HOST}:9092
       - KAFKA_LISTENERS=PLAINTEXT://${KAFKA_HOST}:9092,CONTROLLER://${KAFKA_HOST}:9093
       - KAFKA_CONTROLLER_QUORUM_VOTERS=1@${KAFKA_HOST}:9093
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://${OTEL_COLLECTOR_HOST}:${OTEL_COLLECTOR_PORT_HTTP}
-      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-      - OTEL_RESOURCE_ATTRIBUTES
-      - OTEL_SERVICE_NAME=kafka
       - KAFKA_HEAP_OPTS=-Xmx400m -Xms400m
       # Workaround on OSX for https://bugs.openjdk.org/browse/JDK-8345296
       - _JAVA_OPTIONS

@@ -14,12 +14,7 @@ defmodule FlagdUi.MixProject do
       aliases: aliases(),
       deps: deps(),
       releases: [
-        flagd_ui: [
-          applications: [
-            opentelemetry_exporter: :permanent,
-            opentelemetry: :temporary
-          ]
-        ]
+        flagd_ui: []
       ]
     ]
   end
@@ -66,12 +61,7 @@ defmodule FlagdUi.MixProject do
       {:jason, "~> 1.4.4"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.9.0"},
-      {:credo, "~> 1.7.13", only: [:dev, :test], runtime: false},
-      {:opentelemetry, "~> 1.7.0"},
-      {:opentelemetry_api, "~> 1.5.0"},
-      {:opentelemetry_exporter, "~> 1.10.0"},
-      {:opentelemetry_phoenix, "~> 2.0.1"},
-      {:opentelemetry_bandit, "~> 0.3.0"}
+      {:credo, "~> 1.7.13", only: [:dev, :test], runtime: false}
     ]
   end
 
