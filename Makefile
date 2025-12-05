@@ -17,7 +17,7 @@ DOCKER_COMPOSE_ENV=--env-file .env --env-file .env.override
 
 # see https://github.com/open-telemetry/build-tools/releases for semconvgen updates
 # Keep links in semantic_conventions/README.md and .vscode/settings.json in sync!
-SEMCONVGEN_VERSION=0.11.0
+SEMCONVGEN_VERSION=0.25.0
 YAMLLINT_VERSION=1.30.0
 
 .PHONY: all
@@ -181,22 +181,9 @@ start:
 	@echo ""
 	@echo "OpenTelemetry Demo is running."
 	@echo "Go to http://localhost:8080 for the demo UI."
-	@echo "Go to http://localhost:8080/jaeger/ui for the Jaeger UI."
-	@echo "Go to http://localhost:8080/grafana/ for the Grafana UI."
 	@echo "Go to http://localhost:8080/loadgen/ for the Load Generator UI."
 	@echo "Go to http://localhost:8080/feature/ to change feature flags."
-	@echo "Go to http://localhost:8080/telemetry/ for the Weaver generated telemetry documentation."
-
-.PHONY: start-minimal
-start-minimal:
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) -f docker-compose.minimal.yml up --force-recreate --remove-orphans --detach
-	@echo ""
-	@echo "OpenTelemetry Demo in minimal mode is running."
-	@echo "Go to http://localhost:8080 for the demo UI."
-	@echo "Go to http://localhost:8080/jaeger/ui for the Jaeger UI."
-	@echo "Go to http://localhost:8080/grafana/ for the Grafana UI."
-	@echo "Go to http://localhost:8080/loadgen/ for the Load Generator UI."
-	@echo "Go to https://opentelemetry.io/docs/demo/feature-flags/ to learn how to change feature flags."
+	@echo "Go to http://localhost:10000 for the Envoy admin UI."
 
 .PHONY: stop
 stop:
