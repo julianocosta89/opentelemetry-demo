@@ -1,0 +1,51 @@
+apiVersion: skaffold/v3
+kind: Config
+metadata:
+  name: opentelemetry-demo
+build:
+  tagPolicy:
+    gitCommit: {}
+  artifacts:
+  - image: accounting
+    context: src/accounting
+  - image: ad
+    context: src/ad
+  - image: cart
+    context: src/cart
+  - image: checkout
+    context: src/checkout
+  - image: currency
+    context: src/currency
+  - image: email
+    context: src/email
+  - image: flagd-ui
+    context: src/flagd-ui
+  - image: fraud-detection
+    context: src/fraud-detection
+  - image: frontend
+    context: src/frontend
+  - image: frontend-proxy
+    context: src/frontend-proxy
+  - image: image-provider
+    context: src/image-provider
+  - image: kafka
+    context: src/kafka
+  - image: load-generator
+    context: src/load-generator
+  - image: payment
+    context: src/payment
+  - image: postgres
+    context: src/postgres
+  - image: product-catalog
+    context: src/product-catalog
+  - image: quote
+    context: src/quote
+  - image: recommendation
+    context: src/recommendation
+  - image: shipping
+    context: src/shipping
+  local:
+    useBuildkit: true
+manifests:
+  rawYaml:
+    - kubernetes/*
