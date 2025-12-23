@@ -5,47 +5,87 @@ metadata:
 build:
   tagPolicy:
     gitCommit: {}
+  local:
+    push: false # Defaults to false for local clusters, true for remote
+    tryImportMissing: true # Don't rebuild if the image already exists locally
+    useBuildkit: true
   artifacts:
   - image: accounting
-    context: src/accounting
+    context: .
+    docker:
+      dockerfile: src/accounting/Dockerfile
   - image: ad
-    context: src/ad
+    context: .
+    docker:
+      dockerfile: src/ad/Dockerfile
   - image: cart
-    context: src/cart
+    context: .
+    docker:
+      dockerfile: src/cart/src/Dockerfile
   - image: checkout
-    context: src/checkout
+    context: .
+    docker:
+      dockerfile: src/checkout/Dockerfile
   - image: currency
-    context: src/currency
+    context: .
+    docker:
+      dockerfile: src/currency/Dockerfile
   - image: email
-    context: src/email
+    context: .
+    docker:
+      dockerfile: src/email/Dockerfile
   - image: flagd-ui
-    context: src/flagd-ui
+    context: .
+    docker:
+      dockerfile: src/flagd-ui/Dockerfile
   - image: fraud-detection
-    context: src/fraud-detection
+    context: .
+    docker:
+      dockerfile: src/fraud-detection/Dockerfile
   - image: frontend
-    context: src/frontend
+    context: .
+    docker:
+      dockerfile: src/frontend/Dockerfile
   - image: frontend-proxy
-    context: src/frontend-proxy
+    context: .
+    docker:
+      dockerfile: src/frontend-proxy/Dockerfile
   - image: image-provider
-    context: src/image-provider
+    context: .
+    docker:
+      dockerfile: src/image-provider/Dockerfile
   - image: kafka
-    context: src/kafka
+    context: .
+    docker:
+      dockerfile: src/kafka/Dockerfile
   - image: load-generator
-    context: src/load-generator
+    context: .
+    docker:
+      dockerfile: src/load-generator/Dockerfile
   - image: payment
-    context: src/payment
+    context: .
+    docker:
+      dockerfile: src/payment/Dockerfile
   - image: postgres
-    context: src/postgres
+    context: .
+    docker:
+      dockerfile: src/postgres/Dockerfile
   - image: product-catalog
-    context: src/product-catalog
+    context: .
+    docker:
+      dockerfile: src/product-catalog/Dockerfile
   - image: quote
-    context: src/quote
+    context: .
+    docker:
+      dockerfile: src/quote/Dockerfile
   - image: recommendation
-    context: src/recommendation
+    context: .
+    docker:
+      dockerfile: src/recommendation/Dockerfile
   - image: shipping
-    context: src/shipping
-  local:
-    useBuildkit: true
+    context: .
+    docker:
+      dockerfile: src/shipping/Dockerfile
 manifests:
   rawYaml:
     - kubernetes/*
