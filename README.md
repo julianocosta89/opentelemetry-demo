@@ -49,6 +49,7 @@ You can be up and running with the demo in a few minutes.
     1. Docker: `docker compose up` (requires [docker](https://docs.docker.com/engine/install/))
     1. Podman: `podman compose up` (requires [podman](https://podman.io/docs/installation) - *note: not tested yet*)
     1. Local Kubernetes: `skaffold dev` (requires [skaffold](https://skaffold.dev/docs/install/) and a [local kubernetes cluster](https://skaffold.dev/docs/environment/local-cluster/))
+1. Open the demo in your browser at [http://localhost:8080](http://localhost:8080)
 
 ## Documentation
 
