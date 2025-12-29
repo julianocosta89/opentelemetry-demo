@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-FROM apache/kafka:4.1.1
+FROM mirror.gcr.io/apache/kafka:4.1.1
 
 USER root
 

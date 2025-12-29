@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-FROM --platform=${BUILDPLATFORM} eclipse-temurin:21-jdk AS builder
+FROM --platform=${BUILDPLATFORM} mirror.gcr.io/eclipse-temurin:21-jdk AS builder
+ARG _JAVA_OPTIONS
 WORKDIR /usr/src/app/
 
 COPY ./src/ad/gradlew* ./src/ad/settings.gradle* ./src/ad/build.gradle ./
@@ -19,7 +20,7 @@ RUN ./gradlew installDist -PprotoSourceDir=./proto
 
 # -----------------------------------------------------------------------------
 
-FROM eclipse-temurin:21-jre
+FROM mirror.gcr.io/eclipse-temurin:21-jre
 
 ARG _JAVA_OPTIONS
 

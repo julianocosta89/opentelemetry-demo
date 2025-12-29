@@ -1,7 +1,7 @@
 # Copyright The OpenTelemetry Authors
 # SPDX-License-Identifier: Apache-2.0
 
-FROM docker.io/library/python:3.14-alpine3.23 AS build-venv
+FROM mirror.gcr.io/library/python:3.14-alpine3.23 AS build-venv
 
 RUN apk update && \
     apk add gcc g++ linux-headers

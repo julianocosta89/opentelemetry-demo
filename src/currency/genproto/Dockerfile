@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/library/alpine:3.21 AS builder
+FROM mirror.gcr.io/library/alpine:3.21 AS builder
 
 RUN apk update && \
     apk add git cmake make g++ grpc-dev protobuf-dev linux-headers

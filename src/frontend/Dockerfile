@@ -1,7 +1,7 @@
 # Copyright The OpenTelemetry Authors
 # SPDX-License-Identifier: Apache-2.0
 
-FROM docker.io/library/node:24-slim AS builder
+FROM mirror.gcr.io/library/node:24-slim AS builder
 
 WORKDIR /app
 
@@ -30,7 +30,7 @@ RUN npm run build
 
 # -----------------------------------------------------------------------------
 
-FROM docker.io/library/node:24-slim AS deps
+FROM mirror.gcr.io/library/node:24-slim AS deps
 
 WORKDIR /app
 

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/library/alpine:3.21 AS base
+FROM mirror.gcr.io/library/alpine:3.21 AS base
 
 RUN apk update && \
     apk add grpc-dev protobuf-dev
