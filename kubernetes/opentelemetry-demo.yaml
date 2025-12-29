@@ -696,7 +696,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: accounting
-          image: 'accounting'
+          image: 'otel-demo/accounting'
           imagePullPolicy: IfNotPresent
           env:
             - name: KAFKA_ADDR
@@ -743,7 +743,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: ad
-          image: 'ad'
+          image: 'otel-demo/ad'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -788,7 +788,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: cart
-          image: 'cart'
+          image: 'otel-demo/cart'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -845,7 +845,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: checkout
-          image: 'checkout'
+          image: 'otel-demo/checkout'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -913,7 +913,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: currency
-          image: 'currency'
+          image: 'otel-demo/currency'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -956,7 +956,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: email
-          image: 'email'
+          image: 'otel-demo/email'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -1029,7 +1029,7 @@ spec:
             - name: config-rw
               mountPath: /etc/flagd
         - name: flagd-ui
-          image: 'flagd-ui'
+          image: 'otel-demo/flagd-ui'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 4000
@@ -1093,7 +1093,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: fraud-detection
-          image: 'fraud-detection'
+          image: 'otel-demo/fraud-detection'
           imagePullPolicy: IfNotPresent
           env:
             - name: KAFKA_ADDR
@@ -1142,7 +1142,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: frontend
-          image: 'frontend'
+          image: 'otel-demo/frontend'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -1211,12 +1211,14 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: frontend-proxy
-          image: 'frontend-proxy'
+          image: 'otel-demo/frontend-proxy'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
               name: service
           env:
+            - name: ENVOY_ADDR
+              value: "0.0.0.0"
             - name: ENVOY_PORT
               value: "8080"
             - name: ENVOY_ADMIN_PORT
@@ -1278,7 +1280,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: image-provider
-          image: 'image-provider'
+          image: 'otel-demo/image-provider'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8081
@@ -1319,7 +1321,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: kafka
-          image: 'kafka'
+          image: 'otel-demo/kafka'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9092
@@ -1374,7 +1376,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: load-generator
-          image: 'load-generator'
+          image: 'otel-demo/load-generator'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8089
@@ -1437,7 +1439,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: payment
-          image: 'payment'
+          image: 'otel-demo/payment'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -1486,7 +1488,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: postgresql
-          image: 'postgres'
+          image: 'otel-demo/postgres'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5432
@@ -1531,7 +1533,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: product-catalog
-          image: 'product-catalog'
+          image: 'otel-demo/product-catalog'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -1585,7 +1587,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: quote
-          image: 'quote'
+          image: 'otel-demo/quote'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -1630,7 +1632,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: recommendation
-          image: 'recommendation'
+          image: 'otel-demo/recommendation'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -1679,7 +1681,7 @@ spec:
       serviceAccountName: opentelemetry-demo
       containers:
         - name: shipping
-          image: 'shipping'
+          image: 'otel-demo/shipping'
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
