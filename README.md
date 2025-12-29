@@ -41,11 +41,14 @@ If you'd like to extend this demo or maintain a fork of it, read our
 
 ## Quick start
 
-You can be up and running with the demo in a few minutes. Check out the docs for
-your preferred deployment method:
+You can be up and running with the demo in a few minutes.
 
-- [Docker](https://opentelemetry.io/docs/demo/docker_deployment/)
-- [Kubernetes](https://opentelemetry.io/docs/demo/kubernetes_deployment/)
+1. Clone this repo ([how to clone a repo](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)).
+1. Move to the cloned repo folder: `cd YOUR_CLONED_REPO`
+1. Build and run in a single command:
+    1. Docker: `docker compose up` (requires [docker](https://docs.docker.com/engine/install/))
+    1. Podman: `podman compose up` (requires [podman](https://podman.io/docs/installation) - *note: not tested yet*)
+    1. Local Kubernetes: `skaffold dev` (requires [skaffold](https://skaffold.dev/docs/install/) and a [local kubernetes cluster](https://skaffold.dev/docs/environment/local-cluster/))
 
 ## Documentation
 
