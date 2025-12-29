@@ -1,4 +1,4 @@
-FROM cypress/included:14.5.0
+FROM mirror.gcr.io/cypress/included:14.5.0
 
 WORKDIR /app
 

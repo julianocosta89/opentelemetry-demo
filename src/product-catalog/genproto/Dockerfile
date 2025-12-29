@@ -1,7 +1,7 @@
 # Copyright The OpenTelemetry Authors
 # SPDX-License-Identifier: Apache-2.0
 
-FROM golang:1.25-alpine
+FROM mirror.gcr.io/golang:1.25-alpine
 
 WORKDIR /build
 
