@@ -27,90 +27,112 @@ jobs:
         file_tag:
           - file: ./src/accounting/Dockerfile
             tag_suffix: accounting
+            service_dir: src/accounting
             context: ./
             setup-qemu: true
           - file: ./src/ad/Dockerfile
             tag_suffix: ad
+            service_dir: src/ad
             context: ./
             setup-qemu: true
           - file: ./src/cart/src/Dockerfile
             tag_suffix: cart
+            service_dir: src/cart
             context: ./
             setup-qemu: false
           - file: ./src/checkout/Dockerfile
             tag_suffix: checkout
+            service_dir: src/checkout
             context: ./
             setup-qemu: true
           - file: ./src/currency/Dockerfile
             tag_suffix: currency
+            service_dir: src/currency
             context: ./
             setup-qemu: true
           - file: ./src/email/Dockerfile
             tag_suffix: email
+            service_dir: src/email
             context: ./
             setup-qemu: true
           - file: ./src/flagd-ui/Dockerfile
             tag_suffix: flagd-ui
+            service_dir: src/flagd-ui
             context: ./
             setup-qemu: true
           - file: ./src/fraud-detection/Dockerfile
             tag_suffix: fraud-detection
+            service_dir: src/fraud-detection
             context: ./
             setup-qemu: true
           - file: ./src/frontend/Dockerfile
             tag_suffix: frontend
+            service_dir: src/frontend
             context: ./
             setup-qemu: true
           - file: ./src/frontend-proxy/Dockerfile
             tag_suffix: frontend-proxy
+            service_dir: src/frontend-proxy
             context: ./
             setup-qemu: true
           - file: ./src/frontend/Dockerfile.cypress
             tag_suffix: frontend-tests
+            service_dir: src/frontend
             context: ./
             setup-qemu: true
           - file: ./src/image-provider/Dockerfile
             tag_suffix: image-provider
+            service_dir: src/image-provider
             context: ./
             setup-qemu: true
           - file: ./src/kafka/Dockerfile
             tag_suffix: kafka
+            service_dir: src/kafka
             context: ./
             setup-qemu: true
           - file: ./src/llm/Dockerfile
             tag_suffix: llm
+            service_dir: src/llm
             context: ./
             setup-qemu: true
           - file: ./src/load-generator/Dockerfile
             tag_suffix: load-generator
+            service_dir: src/load-generator
             context: ./
             setup-qemu: true
           - file: ./src/payment/Dockerfile
             tag_suffix: payment
+            service_dir: src/payment
             context: ./
             setup-qemu: true
           - file: ./src/postgres/Dockerfile
             tag_suffix: postgresql
+            service_dir: src/postgres
             context: ./
             setup-qemu: true
           - file: ./src/product-catalog/Dockerfile
             tag_suffix: product-catalog
+            service_dir: src/product-catalog
             context: ./
             setup-qemu: true
           - file: ./src/product-reviews/Dockerfile
             tag_suffix: product-reviews
+            service_dir: src/product-reviews
             context: ./
             setup-qemu: true
           - file: ./src/quote/Dockerfile
             tag_suffix: quote
+            service_dir: src/quote
             context: ./
             setup-qemu: true
           - file: ./src/recommendation/Dockerfile
             tag_suffix: recommendation
+            service_dir: src/recommendation
             context: ./
             setup-qemu: true
           - file: ./src/shipping/Dockerfile
             tag_suffix: shipping
+            service_dir: src/shipping
             context: ./
             setup-qemu: true
 
@@ -119,7 +141,26 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check for changes in service
+        id: check_changes
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            # For push events, check if files changed in the service directory
+            FILES_CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- ${{ matrix.file_tag.service_dir }})
+            if [ -z "$FILES_CHANGED" ]; then
+              echo "No changes detected in ${{ matrix.file_tag.service_dir }}, skipping build."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "Changes detected in ${{ matrix.file_tag.service_dir }}, proceeding with build."
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            # For other events (workflow_dispatch, etc.), always build
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Load environment variables from .env file
+        if: steps.check_changes.outputs.skip == 'false'
         run: |
           if [ -f .env ]; then
             # Filter out comments and empty lines, then add each variable to $GITHUB_ENV
@@ -132,6 +173,7 @@ jobs:
           fi
 
       - name: Log in to GitHub Container Registry
+        if: steps.check_changes.outputs.skip == 'false'
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef  # v3.6.0
         with:
           registry: ghcr.io
@@ -139,12 +181,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up QEMU
-        if: ${{ matrix.file_tag.setup-qemu }}
+        if: steps.check_changes.outputs.skip == 'false' && matrix.file_tag.setup-qemu
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130  # v3.7.0
         with:
           image: tonistiigi/binfmt:master
 
       - name: Set up Docker Buildx
+        if: steps.check_changes.outputs.skip == 'false'
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3.12.0
         with:
           buildkitd-config-inline: |
@@ -152,6 +195,7 @@ jobs:
             max-parallelism = 2
 
       - name: Build and push demo images to GHCR
+        if: steps.check_changes.outputs.skip == 'false'
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83  # v6.18.0
         with:
           context: ${{ matrix.file_tag.context }}
