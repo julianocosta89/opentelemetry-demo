@@ -10,79 +10,79 @@ build:
     tryImportMissing: true # Don't rebuild if the image already exists locally
     useBuildkit: true
   artifacts:
-  - image: otel-demo/accounting
+  - image: ghcr.io/julianocosta89/accounting-no-otel
     context: .
     docker:
       dockerfile: src/accounting/Dockerfile
-  - image: otel-demo/ad
+  - image: ghcr.io/julianocosta89/ad-no-otel
     context: .
     docker:
       dockerfile: src/ad/Dockerfile
-  - image: otel-demo/cart
+  - image: ghcr.io/julianocosta89/cart-no-otel
     context: .
     docker:
       dockerfile: src/cart/src/Dockerfile
-  - image: otel-demo/checkout
+  - image: ghcr.io/julianocosta89/checkout-no-otel
     context: .
     docker:
       dockerfile: src/checkout/Dockerfile
-  - image: otel-demo/currency
+  - image: ghcr.io/julianocosta89/currency-no-otel
     context: .
     docker:
       dockerfile: src/currency/Dockerfile
-  - image: otel-demo/email
+  - image: ghcr.io/julianocosta89/email-no-otel
     context: .
     docker:
       dockerfile: src/email/Dockerfile
-  - image: otel-demo/flagd-ui
+  - image: ghcr.io/julianocosta89/flagd-ui-no-otel
     context: .
     docker:
       dockerfile: src/flagd-ui/Dockerfile
-  - image: otel-demo/fraud-detection
+  - image: ghcr.io/julianocosta89/fraud-detection-no-otel
     context: .
     docker:
       dockerfile: src/fraud-detection/Dockerfile
-  - image: otel-demo/frontend
+  - image: ghcr.io/julianocosta89/frontend-no-otel
     context: .
     docker:
       dockerfile: src/frontend/Dockerfile
-  - image: otel-demo/frontend-proxy
+  - image: ghcr.io/julianocosta89/frontend-proxy-no-otel
     context: .
     docker:
       dockerfile: src/frontend-proxy/Dockerfile
-  - image: otel-demo/image-provider
+  - image: ghcr.io/julianocosta89/image-provider-no-otel
     context: .
     docker:
       dockerfile: src/image-provider/Dockerfile
-  - image: otel-demo/kafka
+  - image: ghcr.io/julianocosta89/kafka-no-otel
     context: .
     docker:
       dockerfile: src/kafka/Dockerfile
-  - image: otel-demo/load-generator
+  - image: ghcr.io/julianocosta89/load-generator-no-otel
     context: .
     docker:
       dockerfile: src/load-generator/Dockerfile
-  - image: otel-demo/payment
+  - image: ghcr.io/julianocosta89/payment-no-otel
     context: .
     docker:
       dockerfile: src/payment/Dockerfile
-  - image: otel-demo/postgres
+  - image: ghcr.io/julianocosta89/postgresql-no-otel
     context: .
     docker:
       dockerfile: src/postgres/Dockerfile
-  - image: otel-demo/product-catalog
+  - image: ghcr.io/julianocosta89/product-catalog-no-otel
     context: .
     docker:
       dockerfile: src/product-catalog/Dockerfile
-  - image: otel-demo/quote
+  - image: ghcr.io/julianocosta89/quote-no-otel
     context: .
     docker:
       dockerfile: src/quote/Dockerfile
-  - image: otel-demo/recommendation
+  - image: ghcr.io/julianocosta89/recommendation-no-otel
     context: .
     docker:
       dockerfile: src/recommendation/Dockerfile
-  - image: otel-demo/shipping
+  - image: ghcr.io/julianocosta89/shipping-no-otel
     context: .
     docker:
       dockerfile: src/shipping/Dockerfile
