@@ -1,7 +1,7 @@
 # Copyright The OpenTelemetry Authors
 # SPDX-License-Identifier: Apache-2.0
 
-FROM mirror.gcr.io/python:3.14-slim-bookworm
+FROM python:3.14-slim-bookworm
 
 WORKDIR /build
 

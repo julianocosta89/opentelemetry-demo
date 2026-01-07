@@ -4,7 +4,7 @@
 
 FROM ghcr.io/mlocati/php-extension-installer:2.9.18 AS installer
 
-FROM mirror.gcr.io/library/composer:2.9.2 AS vendor
+FROM docker.io/library/composer:2.9.2 AS vendor
 
 WORKDIR /tmp/
 
@@ -18,7 +18,7 @@ RUN composer install \
     --no-dev \
     --prefer-dist
 
-FROM mirror.gcr.io/library/php:8.5-cli-alpine3.22
+FROM docker.io/library/php:8.5-cli-alpine3.22
 
 COPY --from=installer /usr/bin/install-php-extensions /usr/local/bin/
 

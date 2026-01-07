@@ -1,7 +1,7 @@
 # Copyright The OpenTelemetry Authors
 # SPDX-License-Identifier: Apache-2.0
 
-FROM mirror.gcr.io/node:24-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 
