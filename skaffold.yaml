@@ -1,0 +1,100 @@
+apiVersion: skaffold/v3
+kind: Config
+metadata:
+  name: opentelemetry-demo
+build:
+  tagPolicy:
+    gitCommit: {}
+  local:
+    push: false # Defaults to false for local clusters, true for remote
+    tryImportMissing: true # Don't rebuild if the image already exists locally
+    useBuildkit: true
+  artifacts:
+  - image: ghcr.io/julianocosta89/accounting-no-otel
+    context: .
+    docker:
+      dockerfile: src/accounting/Dockerfile
+  - image: ghcr.io/julianocosta89/ad-no-otel
+    context: .
+    docker:
+      dockerfile: src/ad/Dockerfile
+  - image: ghcr.io/julianocosta89/cart-no-otel
+    context: .
+    docker:
+      dockerfile: src/cart/src/Dockerfile
+  - image: ghcr.io/julianocosta89/checkout-no-otel
+    context: .
+    docker:
+      dockerfile: src/checkout/Dockerfile
+  - image: ghcr.io/julianocosta89/currency-no-otel
+    context: .
+    docker:
+      dockerfile: src/currency/Dockerfile
+  - image: ghcr.io/julianocosta89/email-no-otel
+    context: .
+    docker:
+      dockerfile: src/email/Dockerfile
+  - image: ghcr.io/julianocosta89/flagd-ui-no-otel
+    context: .
+    docker:
+      dockerfile: src/flagd-ui/Dockerfile
+  - image: ghcr.io/julianocosta89/fraud-detection-no-otel
+    context: .
+    docker:
+      dockerfile: src/fraud-detection/Dockerfile
+  - image: ghcr.io/julianocosta89/frontend-no-otel
+    context: .
+    docker:
+      dockerfile: src/frontend/Dockerfile
+  - image: ghcr.io/julianocosta89/frontend-proxy-no-otel
+    context: .
+    docker:
+      dockerfile: src/frontend-proxy/Dockerfile
+  - image: ghcr.io/julianocosta89/image-provider-no-otel
+    context: .
+    docker:
+      dockerfile: src/image-provider/Dockerfile
+  - image: ghcr.io/julianocosta89/kafka-no-otel
+    context: .
+    docker:
+      dockerfile: src/kafka/Dockerfile
+  - image: ghcr.io/julianocosta89/load-generator-no-otel
+    context: .
+    docker:
+      dockerfile: src/load-generator/Dockerfile
+  - image: ghcr.io/julianocosta89/payment-no-otel
+    context: .
+    docker:
+      dockerfile: src/payment/Dockerfile
+  - image: ghcr.io/julianocosta89/postgresql-no-otel
+    context: .
+    docker:
+      dockerfile: src/postgres/Dockerfile
+  - image: ghcr.io/julianocosta89/product-catalog-no-otel
+    context: .
+    docker:
+      dockerfile: src/product-catalog/Dockerfile
+  - image: ghcr.io/julianocosta89/quote-no-otel
+    context: .
+    docker:
+      dockerfile: src/quote/Dockerfile
+  - image: ghcr.io/julianocosta89/recommendation-no-otel
+    context: .
+    docker:
+      dockerfile: src/recommendation/Dockerfile
+  - image: ghcr.io/julianocosta89/shipping-no-otel
+    context: .
+    docker:
+      dockerfile: src/shipping/Dockerfile
+manifests:
+  rawYaml:
+    - kubernetes/*
+deploy:
+  kubectl:
+    defaultNamespace: otel-demo
+portForward:
+  - resourceType: service
+    resourceName: frontend-proxy
+    namespace: otel-demo
+    port: 8080
+    localPort: 8080

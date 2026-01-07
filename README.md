@@ -41,11 +41,89 @@ If you'd like to extend this demo or maintain a fork of it, read our
 
 ## Quick start
 
-You can be up and running with the demo in a few minutes. Check out the docs for
-your preferred deployment method:
+You can be up and running with the demo in a few minutes.
 
-- [Docker](https://opentelemetry.io/docs/demo/docker_deployment/)
-- [Kubernetes](https://opentelemetry.io/docs/demo/kubernetes_deployment/)
+1. Clone this repo ([how to clone a repo](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)).
+1. Move to the cloned repo folder: `cd YOUR_CLONED_REPO`
+1. Build and run in a single command:
+    1. Docker: `docker compose up` (requires [docker](https://docs.docker.com/engine/install/) and docker compose)
+    1. Podman: `podman compose up` (requires podman and podman-compose ](https://podman.io/docs/installation) - *note: not tested yet*)
+    1. Kubernetes pre-built: `skaffold deploy --tag 2.1.3 && kubectl port-forward svc/frontend-proxy 8080:8080 -n otel-demo` (requires [skaffold](https://skaffold.dev/docs/install/) and [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl))
+    2. Kubernetes w/ local build: `skaffold dev` (requires [skaffold](https://skaffold.dev/docs/install/), [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) and a [local kubernetes cluster](https://skaffold.dev/docs/environment/local-cluster/))
+1. Open the demo in your browser at [http://localhost:8080](http://localhost:8080)
+
+### Troubleshooting
+
+#### Kubernetes image pull issues
+
+In case you get issues with images not being pulled, make sure that the name of the enabled context from your [kubeconfig](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) satisfies the naming scheme outlined in [the skaffold docs](https://skaffold.dev/docs/environment/local-cluster/).
+
+**Example:** 
+- Kubernetes used: kind (v1.25.0) setup via Docker-Desktop
+- Error message shows: `otel-demo:deployment/ad: container ad is waiting to start: otel-demo/ad:26cceba1d3da9b5f59091ebd934c975a0b291c39925dca7f9363219095493431 can't be pulled`
+
+`cat ~/.kube/config`
+
+```yaml
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: REDACTED
+    server: https://127.0.0.1:52643
+  name: docker-desktop
+contexts:
+- context:
+    cluster: docker-desktop
+    user: docker-desktop
+  name: docker-desktop
+current-context: docker-desktop
+kind: Config
+preferences: {}
+users:
+- name: docker-desktop
+  user:
+    client-certificate-data: REDACTED
+    client-key-data: REDACTED
+
+```
+
+`kind get clusters`
+```
+desktop
+```
+
+In this case you have to modify your kubeconfig as follows:
+- rename the context, e.g. to `kind-desktop` -> This is to ensure skaffold recognizes it as kind cluster
+- rename the cluster to `desktop` -> This is to ensure skaffold pushes to the right kind cluster
+- update your current context to `kind-desktop` to activate your changes
+
+This results in
+
+```yaml
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: REDACTED
+    server: https://127.0.0.1:52643
+  name: desktop
+contexts:
+- context:
+    cluster: desktop
+    user: docker-desktop
+  name: kind-desktop
+current-context: kind-desktop
+kind: Config
+preferences: {}
+users:
+- name: docker-desktop
+  user:
+    client-certificate-data: REDACTED
+    client-key-data: REDACTED
+```
+
+This should fix your image pull issues.
+
+*Note:* Depending on your setup, you can also use skaffold's [manual override](https://skaffold.dev/docs/environment/local-cluster/#manual-override) for a temporary fix.
 
 ## Documentation
 
