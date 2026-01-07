@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-FROM --platform=${BUILDPLATFORM} mirror.gcr.io/gradle:8-jdk17 AS builder
+FROM --platform=${BUILDPLATFORM} gradle:8-jdk17 AS builder
 
 WORKDIR /usr/src/app/
 

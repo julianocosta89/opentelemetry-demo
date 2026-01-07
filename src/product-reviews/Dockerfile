@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-FROM mirror.gcr.io/library/python:3.14-alpine3.22 AS build-venv
+FROM docker.io/library/python:3.14-alpine3.22 AS build-venv
 
 RUN apk update && \
     apk add gcc g++ linux-headers
@@ -13,7 +13,7 @@ RUN python -m venv venv && \
     venv/bin/pip install --no-cache-dir -r requirements.txt
 
 
-FROM mirror.gcr.io/library/python:3.14-alpine3.22
+FROM docker.io/library/python:3.14-alpine3.22
 
 COPY --from=build-venv /venv/ /venv/
 

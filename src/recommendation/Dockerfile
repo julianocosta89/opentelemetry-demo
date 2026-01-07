@@ -1,7 +1,7 @@
 # Copyright The OpenTelemetry Authors
 # SPDX-License-Identifier: Apache-2.0
 
-FROM mirror.gcr.io/library/python:3.12-alpine3.22 AS base
+FROM docker.io/library/python:3.12-alpine3.22 AS base
 
 FROM base AS build-venv
 
