@@ -145,14 +145,20 @@ jobs:
         id: check_changes
         run: |
           if [ "${{ github.event_name }}" == "push" ]; then
-            # For push events, check if files changed in the service directory
-            FILES_CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- ${{ matrix.file_tag.service_dir }})
-            if [ -z "$FILES_CHANGED" ]; then
-              echo "No changes detected in ${{ matrix.file_tag.service_dir }}, skipping build."
-              echo "skip=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "Changes detected in ${{ matrix.file_tag.service_dir }}, proceeding with build."
+            BEFORE="${{ github.event.before }}"
+            # Force push or first push produces an invalid/missing before SHA — build everything
+            if [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE" 2>/dev/null; then
+              echo "No valid base commit (force push or first push), proceeding with build."
               echo "skip=false" >> "$GITHUB_OUTPUT"
+            else
+              FILES_CHANGED=$(git diff --name-only "$BEFORE" ${{ github.sha }} -- ${{ matrix.file_tag.service_dir }})
+              if [ -z "$FILES_CHANGED" ]; then
+                echo "No changes detected in ${{ matrix.file_tag.service_dir }}, skipping build."
+                echo "skip=true" >> "$GITHUB_OUTPUT"
+              else
+                echo "Changes detected in ${{ matrix.file_tag.service_dir }}, proceeding with build."
+                echo "skip=false" >> "$GITHUB_OUTPUT"
+              fi
             fi
           else
             # For other events (workflow_dispatch, etc.), always build
