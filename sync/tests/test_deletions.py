@@ -66,6 +66,32 @@ def test_removes_renamed_copy_of_upstream_deleted_file(tmp_path):
     assert not (new / "Dockerfile").exists()       # actually removed
 
 
+def test_keeps_renamed_file_that_also_exists_in_target(tmp_path):
+    """Guard against the false positive that removed compose.yaml on a 3.0.0 sync:
+    git rename detection paired the deleted docker-compose.minimal.yml with the new
+    compose.yaml. But compose.yaml exists in the target — it's a real upstream file,
+    not a stale survivor — so it must be kept."""
+    repo = _repo(tmp_path)
+    body = "services:\n" + "\n".join(f"  svc{i}: {{}}" for i in range(20)) + "\n"
+    (repo / "docker-compose.minimal.yml").write_text(body)
+    base = _commit(repo, "base")
+
+    # upstream deletes the minimal file and ships compose.yaml as the new main file
+    _git(["checkout", "-q", "-b", "upstream"], repo)
+    (repo / "docker-compose.minimal.yml").unlink()
+    (repo / "compose.yaml").write_text(body)
+    target = _commit(repo, "upstream: minimal -> compose.yaml")
+    _git(["checkout", "-q", "main"], repo)
+
+    # our merged tree also has compose.yaml; git detects it as a rename of minimal.yml
+    (repo / "docker-compose.minimal.yml").unlink()
+    (repo / "compose.yaml").write_text(body)
+    _commit(repo, "our fork: compose.yaml")
+
+    assert deletions_mod.propagate_deletions(repo, base, target) == []   # nothing removed
+    assert (repo / "compose.yaml").exists()                             # real upstream file kept
+
+
 def test_no_op_when_we_dont_carry_the_deleted_file(tmp_path):
     repo = _repo(tmp_path)
     (repo / "gone.txt").write_text("x\n")

@@ -50,6 +50,12 @@ def propagate_deletions(worktree, base: str, target: str) -> list[ResolveResult]
             continue
         if not (worktree / new).exists():
             continue
+        # If `new` exists in the target, it's a real upstream file the merge brought
+        # in (e.g. 3.0.0 renamed docker-compose.yml → compose.yaml), not a stale
+        # rename of a deleted file — git's rename detection just mispaired it with a
+        # similar deleted file. Only remove a survivor upstream no longer ships.
+        if gitops.show(target, new, cwd=worktree) is not None:
+            continue
         gitops.remove_path(new, worktree)
         log.info("Removed %s — renamed copy of upstream-deleted %s", new, old)
         results.append(ResolveResult(
