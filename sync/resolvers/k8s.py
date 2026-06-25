@@ -407,3 +407,205 @@ def ensure_postgres_deployable(root, init_sql: str | None = None) -> list[str]:
             changed.append(f"{_SKAFFOLD_REL}: removed postgres build artifact (postgres is pulled, not built)")
 
     return changed
+
+
+# ─── Auto-derive skaffold build artifacts from the manifest ─────────────────────
+
+_ENV_ASSIGN_RE = re.compile(r"^([A-Z0-9_]+)\s*=\s*(.*)$")
+_VAR_REF_RE = re.compile(r"^\$\{?(\w+)\}?$")
+_COMPOSE_NAMES = ("compose.yaml", "compose.yml", "docker-compose.yml", "docker-compose.yaml")
+
+
+def _env_values(root: Path) -> dict[str, str]:
+    """Parse .env into a NAME→value map (skips comments/blanks)."""
+    env = root / ".env"
+    values: dict[str, str] = {}
+    if not env.is_file():
+        return values
+    for line in env.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        m = _ENV_ASSIGN_RE.match(line)
+        if m:
+            values[m.group(1)] = m.group(2).strip()
+    return values
+
+
+def _norm_dockerfile(path: str) -> str:
+    return path[2:] if path.startswith("./") else path
+
+
+def _service_dockerfile_map(root: Path) -> dict[str, str]:
+    """Map service name → Dockerfile path — the canonical build mapping.
+
+    Read from the compose file's `services.<name>.build.dockerfile`, resolving a
+    `${VAR}` reference against .env. The compose service name is authoritative, so
+    cases where the env-var stem differs from the service resolve correctly
+    (`fraud-detection` builds from `${FRAUD_DOCKERFILE}`, not `FRAUD_DETECTION_*`).
+    Paths are non-uniform (e.g. cart → `src/cart/src/Dockerfile`), which is exactly
+    why we reuse this mapping instead of guessing `src/<svc>/Dockerfile`. Falls back
+    to the `<SERVICE>_DOCKERFILE` env-var-name heuristic if no compose file is present.
+    """
+    env_values = _env_values(root)
+    compose = next((root / name for name in _COMPOSE_NAMES if (root / name).is_file()), None)
+    mapping: dict[str, str] = {}
+
+    if compose is not None:
+        try:
+            data = yaml.safe_load(compose.read_text(encoding="utf-8")) or {}
+        except yaml.YAMLError:
+            data = {}
+        for service, spec in (data.get("services") or {}).items():
+            build = (spec or {}).get("build")
+            if not isinstance(build, dict):
+                continue
+            dockerfile = build.get("dockerfile")
+            if not isinstance(dockerfile, str):
+                continue
+            ref = _VAR_REF_RE.match(dockerfile.strip())
+            resolved = env_values.get(ref.group(1), "") if ref else dockerfile.strip()
+            resolved = _norm_dockerfile(resolved)
+            if resolved:
+                mapping[str(service)] = resolved
+        if mapping:
+            return mapping
+
+    # Fallback: no compose file — derive service from the env-var stem.
+    for var, value in env_values.items():
+        if var.endswith("_DOCKERFILE"):
+            service = var[: -len("_DOCKERFILE")].lower().replace("_", "-")
+            mapping[service] = _norm_dockerfile(value)
+    return mapping
+
+
+def _manifest_no_otel_services(root: Path) -> set[str]:
+    """Services the manifest deploys as `<prefix>/<svc>-no-otel` images."""
+    manifest = root / _MANIFEST_REL
+    if not manifest.is_file():
+        return set()
+    prefix, suffix = config.NO_OTEL_IMAGE_PREFIX + "/", "-no-otel"
+    services: set[str] = set()
+    for doc in yaml.safe_load_all(manifest.read_text(encoding="utf-8")):
+        if not isinstance(doc, dict):
+            continue
+        spec = doc.get("spec") or {}
+        pod_spec = (spec.get("template") or {}).get("spec", spec)
+        for key in ("containers", "initContainers"):
+            for c in pod_spec.get(key) or []:
+                img = isinstance(c, dict) and str(c.get("image", "")) or ""
+                if img.startswith(prefix) and img.endswith(suffix):
+                    services.add(img[len(prefix):-len(suffix)])
+    return services
+
+
+def _split_artifact_items(block_lines: list[str]) -> list[list[str]]:
+    """Split the raw lines of a skaffold `artifacts:` list into per-item line blocks."""
+    items: list[list[str]] = []
+    cur: list[str] | None = None
+    for line in block_lines:
+        if line.startswith("  - "):
+            if cur is not None:
+                items.append(cur)
+            cur = [line]
+        elif cur is not None:
+            cur.append(line)
+    if cur is not None:
+        items.append(cur)
+    return items
+
+
+def _artifact_image(item_lines: list[str]) -> str | None:
+    """The `image:` of one raw artifact item block (parsed, so field order is irrelevant)."""
+    try:
+        doc = yaml.safe_load("\n".join(line[2:] for line in item_lines))
+    except yaml.YAMLError:
+        return None
+    if isinstance(doc, list) and doc and isinstance(doc[0], dict):
+        img = doc[0].get("image")
+        return str(img) if img else None
+    return None
+
+
+def ensure_skaffold_artifacts(root) -> list[str]:
+    """Reconcile skaffold.yaml's build artifacts to exactly the manifest's de-oteled
+    services, idempotently, on every sync.
+
+    Coverage was hand-maintained, so a new service that gains a k8s Deployment had to
+    be added by hand or the deploy-consistency gate failed. Instead, derive the artifact
+    set from the manifest: build every `<prefix>/<svc>-no-otel` image the manifest
+    deploys, using the service→Dockerfile mapping from .env. Existing matching artifacts
+    are kept verbatim (no loss of any hand-tuning); only the `artifacts:` block is
+    rewritten, so the rest of skaffold.yaml (build settings, profiles, deploy,
+    port-forward, comments) is preserved.
+
+    A manifest service with no .env Dockerfile entry (or a missing file) is NOT given a
+    fabricated artifact — it's reported for review (and the gate then flags it). Returns
+    human-readable change descriptions (empty if already correct).
+    """
+    root = Path(root)
+    skaffold = root / _SKAFFOLD_REL
+    if not skaffold.is_file():
+        return []
+    text = skaffold.read_text(encoding="utf-8")
+    lines = text.split("\n")
+
+    try:
+        start = next(i for i, line in enumerate(lines) if line.rstrip() == "  artifacts:")
+    except StopIteration:
+        return []
+    end = start + 1
+    while end < len(lines) and (lines[end].startswith("  - ") or lines[end].startswith("    ")):
+        end += 1
+    block_lines = lines[start + 1:end]
+
+    items = _split_artifact_items(block_lines)
+    prefix, suffix = config.NO_OTEL_IMAGE_PREFIX + "/", "-no-otel"
+
+    def service_of(image: str | None) -> str | None:
+        if image and image.startswith(prefix) and image.endswith(suffix):
+            return image[len(prefix):-len(suffix)]
+        return None
+
+    by_service: dict[str, list[str]] = {}
+    other_items: list[list[str]] = []          # non-`-no-otel` artifacts: leave untouched
+    for item in items:
+        svc = service_of(_artifact_image(item))
+        if svc is None:
+            other_items.append(item)
+        else:
+            by_service[svc] = item
+
+    desired = _manifest_no_otel_services(root)
+    dfmap = _service_dockerfile_map(root)
+    changes: list[str] = []
+
+    kept_or_added: list[list[str]] = []
+    for svc in sorted(desired):
+        if svc in by_service:
+            kept_or_added.append(by_service[svc])      # keep verbatim
+            continue
+        df = dfmap.get(svc)
+        if not df or not (root / df).is_file():
+            changes.append(f"skaffold: {svc} has no buildable Dockerfile (env/file missing) — needs review")
+            continue
+        kept_or_added.append([
+            f"  - image: {config.no_otel_image(svc)}",
+            "    context: .",
+            "    docker:",
+            f"      dockerfile: {df}",
+        ])
+        changes.append(f"{_SKAFFOLD_REL}: added build artifact for {svc} ({df})")
+
+    for svc in sorted(by_service):
+        if svc not in desired:
+            changes.append(f"{_SKAFFOLD_REL}: removed orphan build artifact for {svc} (not deployed by manifest)")
+
+    new_block = [line for item in other_items for line in item] + \
+                [line for item in kept_or_added for line in item]
+    new_lines = lines[:start + 1] + new_block + lines[end:]
+    new_text = "\n".join(new_lines)
+
+    if new_text != text:
+        skaffold.write_text(new_text, encoding="utf-8")
+    return changes

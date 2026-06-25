@@ -176,6 +176,15 @@ def main() -> int:
         log.info("Normalized postgres deploy: %s", "; ".join(pg_changed))
         notes.append("Normalized postgres deploy (stock image + init.sql ConfigMap; no postgres build artifact).")
 
+    # 7d. Auto-derive skaffold build artifacts from the manifest, so local-deploy
+    #     coverage tracks the manifest: a service that gains a Deployment is built,
+    #     an orphaned one is dropped — using the canonical service→Dockerfile map in .env.
+    sk_changed = k8s.ensure_skaffold_artifacts(wt)
+    if sk_changed:
+        gitops.stage("skaffold.yaml", wt)
+        log.info("Reconciled skaffold artifacts: %s", "; ".join(sk_changed))
+        notes.append("Reconciled skaffold build artifacts to the manifest's deployed services.")
+
     # 8. Regenerate lockfiles for de-oteled dependency manifests.
     dep_paths = [p for p in conflict_codes if dispatch.classify(p, conflict_codes[p]) in ("deps", "lockfile")]
     lock_results = lockfiles.regenerate(wt, dep_paths)
