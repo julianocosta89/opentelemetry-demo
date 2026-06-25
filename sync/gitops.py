@@ -268,6 +268,17 @@ def remove_path(path: str, worktree: Path) -> None:
     _git(["rm", "-f", "--", path], worktree, check=False)
 
 
+def is_ignored(path: str, worktree: Path) -> bool:
+    """True if `path` matches the worktree's .gitignore patterns.
+
+    `--no-index` is essential: a modify/delete conflict leaves the path in the
+    index (merge staged the other side), and plain `check-ignore` reports a
+    *tracked* path as not-ignored. `--no-index` matches purely against the ignore
+    patterns. `-q` exits 0 when ignored, 1 when not.
+    """
+    return _git(["check-ignore", "--no-index", "-q", "--", path], worktree, check=False).returncode == 0
+
+
 def stage_all(worktree: Path) -> None:
     """Stage every change in the worktree (adds, mods, deletes).
 

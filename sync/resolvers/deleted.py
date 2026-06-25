@@ -15,6 +15,16 @@ from resolvers.common import ResolveResult
 
 
 def resolve(path: str, code: str, worktree) -> ResolveResult:
+    if gitops.is_ignored(path, worktree):
+        # This fork's .gitignore covers the path (e.g. build artifacts upstream
+        # tracks but we don't, like src/react-native-app/ios/). It must not be
+        # tracked — drop whatever the merge left, keeping it untracked. Staging it
+        # would fail ("paths are ignored"); keeping ours would re-track it.
+        gitops.remove_path(path, worktree)
+        return ResolveResult(
+            path, "deleted-gitignored", True,
+            "path is gitignored in this fork — kept untracked",
+        )
     if code == "DU":
         # Deleted by us, modified by them → we removed this (e.g. otel-collector
         # config); keep it removed. Git left upstream's version in the tree.
