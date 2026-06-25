@@ -40,14 +40,23 @@ openai==1.0.0
 
 PACKAGE_JSON = json.dumps({
     "name": "frontend",
+    "repository": "https://github.com/opentelemetry/opentelemetry-demo",   # identity, kept
+    "scripts": {
+        "start": "node --require @opentelemetry/auto-instrumentations-node/register index.js",
+        "build": "next build",
+    },
     "dependencies": {
         "next": "15.0.0",
         "@opentelemetry/api": "^1.9.0",
+        "pino-opentelemetry-transport": "^3.0.0",   # unscoped OTel dep
         "@openfeature/react-sdk": "1.2.0",
     },
     "devDependencies": {
         "@opentelemetry/instrumentation": "^0.50.0",
         "typescript": "5.4.0",
+    },
+    "overrides": {
+        "@opentelemetry/otlp-transformer": {"protobufjs": "8.2.0"},
     },
 }, indent=2)
 
@@ -135,10 +144,18 @@ def test_requirements_drops_otel_keeps_bumps():
 def test_package_json_valid_and_otel_free():
     out = deps.transform_package_json(PACKAGE_JSON)
     obj = json.loads(out)  # must stay valid JSON
-    assert all(not k.startswith("@opentelemetry/") for k in obj["dependencies"])
-    assert all(not k.startswith("@opentelemetry/") for k in obj["devDependencies"])
+    # all OTel deps gone, scoped and unscoped, across every section
+    assert "opentelemetry" not in out.lower().replace(
+        "github.com/opentelemetry/opentelemetry-demo", "")  # ...except the repo URL
+    assert "pino-opentelemetry-transport" not in obj["dependencies"]
+    assert "overrides" not in obj                       # emptied → dropped
+    # npm start script keeps the command but drops the --require instrumentation flag
+    assert obj["scripts"]["start"] == "node index.js"
+    assert obj["scripts"]["build"] == "next build"
+    # business deps + identity preserved
     assert obj["dependencies"]["next"] == "15.0.0"
     assert obj["dependencies"]["@openfeature/react-sdk"] == "1.2.0"
+    assert obj["repository"] == "https://github.com/opentelemetry/opentelemetry-demo"
     assert not _no_otel("src/frontend/package.json", out)
 
 

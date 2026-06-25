@@ -114,9 +114,38 @@ def _strip_json_otel_keys(obj: dict, prefixes: tuple[str, ...]) -> int:
     return removed
 
 
+_NODE_OTEL_FLAG = re.compile(r"\s*--(?:require|loader|import)[ =]\S*opentelemetry\S*")
+
+
+def _clean_npm_scripts(scripts: dict) -> None:
+    """Strip OTel auto-instrumentation flags from npm script commands.
+
+    e.g. `node --require @opentelemetry/auto-instrumentations-node/register index.js`
+         → `node index.js`. The --require loads instrumentation at startup, so it's
+    removed like any other instrumentation, not kept as config.
+    """
+    for name, cmd in list(scripts.items()):
+        if isinstance(cmd, str):
+            cleaned = _NODE_OTEL_FLAG.sub("", cmd).strip()
+            if cleaned != cmd:
+                scripts[name] = cleaned
+
+
 def transform_package_json(content: str) -> str:
     obj = json.loads(_drop_markers(content))
-    _strip_json_otel_keys(obj, ("@opentelemetry/",))
+    # Remove any dependency whose package name contains "opentelemetry" — covers the
+    # @opentelemetry/* scope AND unscoped OTel packages (e.g. pino-opentelemetry-
+    # transport) — across dependency-like sections including overrides/resolutions.
+    for section in ("dependencies", "devDependencies", "peerDependencies",
+                    "optionalDependencies", "overrides", "resolutions"):
+        deps = obj.get(section)
+        if isinstance(deps, dict):
+            for key in [k for k in deps if "opentelemetry" in k.lower()]:
+                del deps[key]
+            if not deps and section in ("overrides", "resolutions"):
+                del obj[section]   # drop a now-empty overrides/resolutions block
+    if isinstance(obj.get("scripts"), dict):
+        _clean_npm_scripts(obj["scripts"])
     return json.dumps(obj, indent=2) + "\n"
 
 

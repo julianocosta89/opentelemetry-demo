@@ -85,8 +85,11 @@ RULES = [
     (
         "js_package",
         "**/package.json",
-        [r'"@opentelemetry/'],
-        "package.json: @opentelemetry dependency",
+        # Match the @opentelemetry/ npm scope anywhere — catches deps/overrides AND
+        # a `--require @opentelemetry/...` instrumentation flag in a script. Does not
+        # match the demo's own repository URL (github.com/opentelemetry/..., no '@').
+        [r"@opentelemetry/"],
+        "package.json: @opentelemetry dependency or instrumentation flag",
     ),
     # ── Go ────────────────────────────────────────────────────────────────────
     (
