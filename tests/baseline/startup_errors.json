@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "captured_at": "2026-03-06T13:17:51.318002Z",
+    "upstream_version": "2.2.0",
+    "upstream_image_prefix": "ghcr.io/open-telemetry/demo:2.2.0",
+    "source": "de-otelified",
+    "wait_seconds_after_running": 60
+  },
+  "services": {
+    "accounting": {
+      "error_count": 0,
+      "errors": []
+    },
+    "ad": {
+      "error_count": 0,
+      "errors": []
+    },
+    "cart": {
+      "error_count": 0,
+      "errors": []
+    },
+    "checkout": {
+      "error_count": 0,
+      "errors": []
+    },
+    "currency": {
+      "error_count": 0,
+      "errors": []
+    },
+    "email": {
+      "error_count": 0,
+      "errors": []
+    },
+    "flagd": {
+      "error_count": 0,
+      "errors": []
+    },
+    "flagd-ui": {
+      "error_count": 0,
+      "errors": []
+    },
+    "fraud-detection": {
+      "error_count": 0,
+      "errors": []
+    },
+    "frontend": {
+      "error_count": 0,
+      "errors": []
+    },
+    "frontend-proxy": {
+      "error_count": 0,
+      "errors": []
+    },
+    "image-provider": {
+      "error_count": 0,
+      "errors": []
+    },
+    "kafka": {
+      "error_count": 0,
+      "errors": []
+    },
+    "llm": {
+      "error_count": 0,
+      "errors": []
+    },
+    "load-generator": {
+      "error_count": 0,
+      "errors": []
+    },
+    "payment": {
+      "error_count": 0,
+      "errors": []
+    },
+    "postgresql": {
+      "error_count": 0,
+      "errors": []
+    },
+    "product-catalog": {
+      "error_count": 0,
+      "errors": []
+    },
+    "product-reviews": {
+      "error_count": 0,
+      "errors": []
+    },
+    "quote": {
+      "error_count": 0,
+      "errors": []
+    },
+    "recommendation": {
+      "error_count": 0,
+      "errors": []
+    },
+    "shipping": {
+      "error_count": 0,
+      "errors": []
+    },
+    "valkey-cart": {
+      "error_count": 0,
+      "errors": []
+    }
+  }
+}
