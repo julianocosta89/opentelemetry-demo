@@ -78,6 +78,9 @@ fetch upstream → pick release tag → merge-tree probe (abort if too noisy)
        kubernetes manifest        → deterministic OTel-strip + image rewrite (k8s.py)
        source / compose / .env / Dockerfile → 3-way LLM resolution (source_llm.py)
   → residual scan: clean OTel that merged in without a conflict (residual_scan.py)
+  → propagate upstream deletions a merge kept as renames (deletions.py)
+  → normalize the local deploy (k8s.py): postgres → stock image + init.sql
+    ConfigMap, and regenerate skaffold artifacts from the manifest — see SKAFFOLD.md
   → optional: rewrite base images to a mirror (base_image_mirror.py)
   → regenerate lockfiles (go mod tidy / npm / composer / cargo / mix)  (lockfiles.py)
   → test gate (pytest tests/ -m fast) → commit + report → (CI) open a PR
