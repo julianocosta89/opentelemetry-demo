@@ -31,7 +31,7 @@ import gitops
 import lockfiles
 import report
 import residual_scan
-from resolvers import dispatch, source_llm
+from resolvers import dispatch, k8s, source_llm
 
 log = logging.getLogger("sync")
 
@@ -165,6 +165,16 @@ def main() -> int:
         if mirrored:
             log.info("Rewrote %d Dockerfile(s) to base-image mirror %s", len(mirrored), config.BASE_IMAGE_MIRROR)
             notes.append(f"Rewrote {len(mirrored)} Dockerfile base image(s) to {config.BASE_IMAGE_MIRROR}.")
+
+    # 7c. Guarantee postgres is deployable from the stock image (+ init.sql ConfigMap)
+    #     and not a dangling skaffold build — even on a clean merge that skipped the
+    #     k8s transform (e.g. adopting an already-de-oteled base with a broken deploy).
+    pg_changed = k8s.ensure_postgres_deployable(wt)
+    for c in pg_changed:
+        gitops.stage(c.split(":", 1)[0], wt)
+    if pg_changed:
+        log.info("Normalized postgres deploy: %s", "; ".join(pg_changed))
+        notes.append("Normalized postgres deploy (stock image + init.sql ConfigMap; no postgres build artifact).")
 
     # 8. Regenerate lockfiles for de-oteled dependency manifests.
     dep_paths = [p for p in conflict_codes if dispatch.classify(p, conflict_codes[p]) in ("deps", "lockfile")]

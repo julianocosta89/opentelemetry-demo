@@ -22,6 +22,7 @@ flagd pod) rather than splitting services out — matching this fork's de-otel s
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
@@ -331,3 +332,78 @@ def resolve(path: str, worktree) -> ResolveResult:
     full.write_text(transformed, encoding="utf-8")
     gitops.stage(path, worktree)
     return ResolveResult(path, "k8s", True, "took upstream manifest, removed OTel infra/env/labels, synthesized app Deployments")
+
+
+# ─── Always-on local-deploy normalization ──────────────────────────────────────
+
+_MANIFEST_REL = "kubernetes/opentelemetry-demo.yaml"
+_SKAFFOLD_REL = "skaffold.yaml"
+# A skaffold build artifact for a postgres image: the `- image: …postgres…` list item
+# plus its more-indented continuation lines (context/docker/dockerfile).
+_SKAFFOLD_POSTGRES_ARTIFACT = re.compile(
+    r"^  - image:[^\n]*postgres[^\n]*\n(?:^    [^\n]*\n)*", re.MULTILINE)
+
+
+def _normalize_postgres_manifest_text(text: str, init_sql: str) -> str:
+    """Return the manifest with ONLY its postgres Deployment normalized to the stock
+    image + init.sql ConfigMap. Other documents keep their exact original text."""
+    chunks = text.split("\n---\n")
+    out: list[str] = []
+    seen = False
+    for ch in chunks:
+        try:
+            doc = yaml.safe_load(ch)
+        except yaml.YAMLError:
+            doc = None
+        if isinstance(doc, dict):
+            md = doc.get("metadata") or {}
+            if doc.get("kind") == "ConfigMap" and md.get("name") == config.POSTGRES_INIT_CONFIGMAP:
+                continue  # drop stale; regenerated from source below
+            if doc.get("kind") == "Deployment" and md.get("name") == "postgresql":
+                _normalize_postgres_deployment(doc)
+                seen = True
+                out.append(yaml.dump(doc, default_flow_style=False, allow_unicode=True,
+                                     sort_keys=False).rstrip())
+                continue
+        out.append(ch)
+    if not seen:
+        return text
+    return "\n---\n".join(out).rstrip() + "\n---\n" + _postgres_init_configmap_yaml(init_sql).rstrip() + "\n"
+
+
+def ensure_postgres_deployable(root, init_sql: str | None = None) -> list[str]:
+    """Idempotently make postgres deployable from the stock image, independent of
+    whether the k8s manifest passed through transform_kubernetes.
+
+    transform_kubernetes normalizes postgres, but it only runs when the manifest
+    conflicts or carries residual OTel — a clean adoption of an already-de-oteled
+    base (e.g. Juliano's) skips it and inherits that base's postgres deploy, which
+    can be broken (manifest deploys a postgresql-no-otel image, skaffold builds it
+    from a src/postgres/Dockerfile that no longer exists). This guarantees, on every
+    sync, that the manifest's postgres runs the stock image + an init.sql ConfigMap
+    and that skaffold doesn't try to build a postgres image (it's pulled).
+
+    Returns human-readable descriptions of what changed (empty if already clean).
+    """
+    root = Path(root)
+    changed: list[str] = []
+    if init_sql is None:
+        init_sql = read_init_sql(root)
+
+    manifest = root / _MANIFEST_REL
+    if init_sql is not None and manifest.is_file():
+        original = manifest.read_text(encoding="utf-8")
+        updated = _normalize_postgres_manifest_text(original, init_sql)
+        if updated != original:
+            manifest.write_text(updated, encoding="utf-8")
+            changed.append(f"{_MANIFEST_REL}: postgres → stock image + init.sql ConfigMap")
+
+    skaffold = root / _SKAFFOLD_REL
+    if skaffold.is_file():
+        original = skaffold.read_text(encoding="utf-8")
+        updated = _SKAFFOLD_POSTGRES_ARTIFACT.sub("", original)
+        if updated != original:
+            skaffold.write_text(updated, encoding="utf-8")
+            changed.append(f"{_SKAFFOLD_REL}: removed postgres build artifact (postgres is pulled, not built)")
+
+    return changed
