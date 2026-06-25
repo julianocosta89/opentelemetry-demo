@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-FROM --platform=${BUILDPLATFORM} eclipse-temurin:21-jdk AS builder
+FROM --platform=${BUILDPLATFORM} docker.io/library/eclipse-temurin:24.0.2_12-jdk@sha256:7493205ffe6caa8074fa8a06a276bb1c5ac41d3dd0fd43a0db66d7f776e80b3e AS builder
 ARG _JAVA_OPTIONS
 WORKDIR /usr/src/app/
 
@@ -20,7 +20,7 @@ RUN ./gradlew installDist -PprotoSourceDir=./proto
 
 # -----------------------------------------------------------------------------
 
-FROM eclipse-temurin:21-jre
+FROM docker.io/library/eclipse-temurin:24.0.2_12-jre@sha256:8cb2387a28af84cf0db0948d9c67d4480192f4e567027a3963f145d218e8b4f2
 
 ARG _JAVA_OPTIONS
 

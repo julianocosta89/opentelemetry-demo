@@ -1,28 +1,28 @@
 {
-    "name": "openteletry-demo/quote",
-    "description": "Quote Service part of OpenTelemetry Demo",
-    "license": "Apache-2.0",
-    "require": {
-        "php": ">= 8.3",
-        "ext-json": "*",
-        "ext-pcntl": "*",
-        "monolog/monolog": "3.10.0",
-        "guzzlehttp/guzzle": "7.10.0",
-        "php-di/php-di": "7.1.1",
-        "php-di/slim-bridge": "3.4.1",
-        "php-http/guzzle7-adapter": "1.1.0",
-        "react/http": "v1.11.0",
-        "slim/psr7": "1.8.0",
-        "slim/slim": "4.15.1"
-    },
-    "autoload": {
-        "psr-4": {
-            "App\\": "src/"
-        }
-    },
-    "config": {
-        "allow-plugins": {
-            "php-http/discovery": false
-        }
+  "name": "openteletry-demo/quote",
+  "description": "Quote Service part of OpenTelemetry Demo",
+  "license": "Apache-2.0",
+  "require": {
+    "php": ">= 8.3",
+    "ext-json": "*",
+    "ext-pcntl": "*",
+    "monolog/monolog": "3.10.0",
+    "guzzlehttp/guzzle": "7.12.1",
+    "php-di/php-di": "7.1.1",
+    "php-di/slim-bridge": "3.4.1",
+    "php-http/guzzle7-adapter": "1.1.0",
+    "react/http": "v1.11.0",
+    "slim/psr7": "1.8.0",
+    "slim/slim": "4.15.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
     }
+  },
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": false
+    }
+  }
 }

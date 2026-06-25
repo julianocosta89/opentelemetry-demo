@@ -9,20 +9,20 @@ import com.google.protobuf.gradle.*
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("jvm") version "2.3.10"
+    kotlin("jvm") version "2.4.0"
     application
     id("java")
     id("idea")
-    id("com.google.protobuf") version "0.9.6"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.google.protobuf") version "0.10.0"
+    id("com.gradleup.shadow") version "9.4.2"
 }
 
 group = "io.opentelemetry"
 version = "1.0"
 
 
-val grpcVersion = "1.79.0"
-val protobufVersion = "4.34.0"
+val grpcVersion = "1.81.0"
+val protobufVersion = "4.35.0"
 
 
 repositories {
@@ -36,17 +36,17 @@ dependencies {
     implementation("com.google.protobuf:protobuf-java:${protobufVersion}")
     testImplementation(kotlin("test"))
     implementation(kotlin("script-runtime"))
-    implementation("org.apache.kafka:kafka-clients:4.2.0")
-    implementation("com.google.api.grpc:proto-google-common-protos:2.66.0")
+    implementation("org.apache.kafka:kafka-clients:4.3.0")
+    implementation("com.google.api.grpc:proto-google-common-protos:2.72.0")
     implementation("io.grpc:grpc-protobuf:${grpcVersion}")
     implementation("io.grpc:grpc-stub:${grpcVersion}")
     implementation("io.grpc:grpc-netty:${grpcVersion}")
     implementation("io.grpc:grpc-services:${grpcVersion}")
-    implementation("org.apache.logging.log4j:log4j-core:2.25.3")
-    implementation("org.slf4j:slf4j-api:2.0.17")
+    implementation("org.apache.logging.log4j:log4j-core:2.26.0")
+    implementation("org.slf4j:slf4j-api:2.0.18")
     implementation("com.google.protobuf:protobuf-kotlin:${protobufVersion}")
-    implementation("dev.openfeature:sdk:1.20.1")
-    implementation("dev.openfeature.contrib.providers:flagd:0.11.20")
+    implementation("dev.openfeature:sdk:1.20.2")
+    implementation("dev.openfeature.contrib.providers:flagd:0.14.0")
 
     if (JavaVersion.current().isJava9Compatible) {
         // Workaround for @javax.annotation.Generated
@@ -57,6 +57,7 @@ dependencies {
 
 tasks {
     shadowJar {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
         mergeServiceFiles()
     }
 }

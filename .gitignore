@@ -19,8 +19,6 @@
 .codex/
 .cursor/
 .cursorrules
-AGENTS.md
-CLAUDE.md
 
 # Build artifacts
 bin/
@@ -41,6 +39,7 @@ composer.lock
 .dockerhub.env
 .ghcr.env
 *.apk
+/.lycheecache
 
 # Ignore copied/generated protobuf files
 /src/accounting/src/protos/
@@ -60,4 +59,3 @@ src/shipping/target/
 test/tracetesting/tracetesting-vars.yaml
 
 !src/currency/build
-

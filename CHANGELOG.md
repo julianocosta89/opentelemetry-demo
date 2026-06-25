@@ -7,9 +7,36 @@ the release.
 
 ## Unreleased
 
-* [recommendation] Fix `recommendationCacheFailure` feature flag by
-  using `ListProducts` instead of `GetProduct`
-  ([#3260](https://github.com/open-telemetry/opentelemetry-demo/pull/3260))
+* [frontend] Fix cart page showing unit price instead of line total; add
+  per-item quantity selector so users can change quantities directly in the
+  cart, with each row now displaying both the unit price and the line total
+  (unit price * quantity)
+  ([#3521](https://github.com/open-telemetry/opentelemetry-demo/pull/3521))
+* [payment] Replace manual SDK initialization with zero-code instrumentation
+  via `NODE_OPTIONS=--require @opentelemetry/auto-instrumentations-node/register`
+  ([#3486](https://github.com/open-telemetry/opentelemetry-demo/pull/3486))
+* [llm] Increase `llm` service memory limit from 50M to 100M to prevent a
+  startup restart loop caused by the container exceeding its memory limit
+  ([#2944](https://github.com/open-telemetry/opentelemetry-demo/issues/2944))
+* [testing] Add telemetry sanity tests to validate end-to-end observability
+  pipeline, including service-to-service edge verification via Jaeger trace walks
+  ([#3356](https://github.com/open-telemetry/opentelemetry-demo/pull/3356))
+* [testing] Telemetry tests now build the PR's images and share them across the
+  full/minimal jobs via an artifact (instead of pulling released images), wait
+  for the traces, metrics, and logs backends during warmup to avoid per-test
+  timeouts, and cap the test step at 15 minutes
+  ([#3498](https://github.com/open-telemetry/opentelemetry-demo/pull/3498))
+* [testing] Telemetry test warmup now drives a few real checkouts through the
+  frontend so low-frequency services (`email`, `quote`) that only emit on the
+  checkout path produce telemetry deterministically, instead of depending on the
+  load generator's ~6% checkout task weight landing inside the test window
+  ([#3505](https://github.com/open-telemetry/opentelemetry-demo/pull/3505))
+* [fraud-detection] Set the Kafka consumer `auto.offset.reset` to `earliest` so
+  it processes `orders` produced before its consumer group finished joining,
+  matching the accounting consumer. Previously the Kafka default of `latest`
+  silently dropped those orders, so fraud-detection could emit no telemetry on a
+  quiet or cold start
+  ([#3505](https://github.com/open-telemetry/opentelemetry-demo/pull/3505))
 * [telemetry-docs] Add a new service to provide telemetry documentation based
   on Weaver
   ([#2794](https://github.com/open-telemetry/opentelemetry-demo/pull/2794))
@@ -51,10 +78,183 @@ the release.
 * [load-generator] Wait for Roof Binoculars image to load in web tasks, and fix
   task failures due to missing `tracer` attribute
   ([#3171](https://github.com/open-telemetry/opentelemetry-demo/pull/3171))
+* [docker] Refactor Docker Compose to use layered `-f` files with `start`,
+  `start-minimal`, `start-no-o11y`, and `start-minimal-no-o11y` make targets
+  ([#3229](https://github.com/open-telemetry/opentelemetry-demo/pull/3229))
 * [kubernetes] Removed generated Kubernetes manifests in favor of docs
   ([#3236](https://github.com/open-telemetry/opentelemetry-demo/pull/3236))
 * [cart] Swap the deprecated `OpenFeature.Contrib.Providers.Flagd` package
-  provider with the new `OpenFeature.Providers.Flagd` package. ([#3247](https://github.com/open-telemetry/opentelemetry-demo/pull/3247))
+  provider with the new `OpenFeature.Providers.Flagd` package.
+  ([#3247](https://github.com/open-telemetry/opentelemetry-demo/pull/3247))
+* [recommendation] Fix `recommendationCacheFailure` feature flag by
+  using `ListProducts` instead of `GetProduct`
+  ([#3260](https://github.com/open-telemetry/opentelemetry-demo/pull/3260))
+* [payment] Fix `charge` span lifecycle and exception attribution: wrap charge
+  logic in `try/catch/finally` to ensure the span is always ended, record
+  exceptions on the `charge` span where they originate, and remove duplicate
+  `recordException` from the gRPC handler
+  ([#3276](https://github.com/open-telemetry/opentelemetry-demo/pull/3276))
+* [frontend] fix: handle undefined product images across multiple components
+  ([#3291](https://github.com/open-telemetry/opentelemetry-demo/pull/3291))
+* [grafana] Bump Grafana image to 13.0.1 and provision the
+  `grafana-default-email` contact point explicitly, since Grafana no longer
+  auto-seeds it (removed in 12.4+)
+* [react-native-app] Update to Expo 55.0.16
+  ([#3296](https://github.com/open-telemetry/opentelemetry-demo/pull/3296))
+* [docker] Podman doesn't support the tag feature of docker logs,
+  for the otel-demo to support podman we need to remove the tag from docker logs.
+  [#3304](https://github.com/open-telemetry/opentelemetry-demo/pull/3304)
+* [podman] Add podman support to run the demo. The makefile has been updated
+  to detect what container runtime is installed.
+  [#3307](https://github.com/open-telemetry/opentelemetry-demo/pull/3307)
+* [frontend] fix: handle corrupted session data in localStorage
+  ([#3313](https://github.com/open-telemetry/opentelemetry-demo/pull/3313))
+* [collector] Add `transform/sanitize_logs` processor to work around
+  `otelcol.signal` scope attribute conflict with `otelcol.signal.output`
+  that causes OpenSearch/Elasticsearch mapping failures
+  ([#3321](https://github.com/open-telemetry/opentelemetry-demo/pull/3321))
+* [profiling] Add profiling and use firepit as the backend to ingest profiles.
+  This allows us to view profiles in the firepit webui.
+  [#3333](https://github.com/open-telemetry/opentelemetry-demo/pull/3333)
+* [shipping] Add `intlShippingSlowdown` integer feature flag to delay
+  international (non-US) shipments by N seconds via flagd with OpenTelemetry tracing
+  ([#3354](https://github.com/open-telemetry/opentelemetry-demo/issues/3354))
+* [telemetry] Rename the product identifier telemetry attribute from
+  `app.product.id` to `demo.product.id` across cart, product-catalog,
+  product-reviews, telemetry schema, and trace tests.
+  ([#3355](https://github.com/open-telemetry/opentelemetry-demo/pull/3355))
+* [frontend,ad,payment] Propagate `enduser.id` as a span attribute on all
+  browser spans via `SessionIdProcessor`, forward it via W3C Baggage on
+  outgoing API requests through the ApiGateway proxy, and extract it in the
+  ad and payment backend services to stamp their own spans
+  ([#3366](https://github.com/open-telemetry/opentelemetry-demo/pull/3366))
+* [telemetry] Rename the product name telemetry attribute from
+  `app.product.name` to `demo.product.name` across product-catalog and
+  telemetry schema.
+  ([#3370](https://github.com/open-telemetry/opentelemetry-demo/pull/3370))
+* [telemetry] Rename the product quantity telemetry attribute from
+  `app.product.quantity` to `demo.product.quantity` across cart and
+  telemetry schema.
+  ([#3371](https://github.com/open-telemetry/opentelemetry-demo/pull/3371))
+* [telemetry] Rename the product review question telemetry attribute from
+  `app.product.question` to `demo.product.review.question` across
+  product-reviews and telemetry schema.
+  ([#3372](https://github.com/open-telemetry/opentelemetry-demo/pull/3372))
+* [telemetry] Rename product count telemetry attributes from
+  `app.products.count` to `demo.product.count` and from
+  `app.products_recommended.count` to `demo.product.recommended.count` across
+  recommendation, telemetry schema, and trace tests.
+  ([#3374](https://github.com/open-telemetry/opentelemetry-demo/pull/3374))
+* [telemetry] Rename product filtering, search, and review telemetry attributes:
+  `app.filtered_products.count` to `demo.product.filtered.count`,
+  `app.filtered_products.list` to `demo.product.filtered.list`,
+  `app.products_search.count` to `demo.product.search.count`,
+  `app.product_reviews.count` to `demo.product.review.count`, and
+  `app.product_reviews.average_score` to `demo.product.review.average_score`
+  across product-catalog, product-reviews, recommendation, telemetry schema,
+  and trace tests.
+  ([#3376](https://github.com/open-telemetry/opentelemetry-demo/pull/3376))
+* [telemetry] Rename advertising telemetry attributes:
+  `app.ads.category` to `demo.ad.category`,
+  `app.ads.count` to `demo.ad.count`,
+  `app.ads.contextKeys` to `demo.ad.context_keys`,
+  `app.ads.contextKeys.count` to `demo.ad.context_keys.count`,
+  `app.ads.ad_request_type` to `demo.ad.request_type`, and
+  `app.ads.ad_response_type` to `demo.ad.response_type` across ad,
+  product-catalog, product-reviews, recommendation, telemetry schema, and trace
+  tests.
+  ([#3387](https://github.com/open-telemetry/opentelemetry-demo/pull/3387))
+* [ad] Expose a Prometheus `/metrics` endpoint (default port `9465`) using the
+  Prometheus Java client library, with a custom counter
+  `demo_ad_served_total{category}`, and scrape it from the OTel Collector via a
+  new `prometheus/ad` receiver to demo bridging non-OTel custom metrics into an
+  OpenTelemetry pipeline.
+  ([#3388](https://github.com/open-telemetry/opentelemetry-demo/pull/3388))
+* [telemetry] Rename order and cart telemetry attributes:
+  `app.order.id` to `demo.order.id`,
+  `app.order.amount` to `demo.order.amount`,
+  `app.order.items.count` to `demo.order.items.count`, and
+  `app.cart.items.count` to `demo.cart.items.count` across cart, checkout,
+  email, telemetry schema, and trace tests.
+  ([#3389](https://github.com/open-telemetry/opentelemetry-demo/pull/3389))
+* [telemetry] Rename payment telemetry attributes:
+  `app.payment.amount` to `demo.payment.amount`,
+  `app.payment.card_type` to `demo.payment.card_type`,
+  `app.payment.card_valid` to `demo.payment.card_valid`,
+  `app.payment.charged` to `demo.payment.charged`,
+  `app.payment.transaction.id` to `demo.payment.transaction.id`, and
+  `app.payment.currency` to `demo.payment.currency` across checkout, payment,
+  and telemetry schema.
+  ([#3390](https://github.com/open-telemetry/opentelemetry-demo/pull/3390))
+* [telemetry] Rename shipping and quote telemetry attributes:
+  `app.shipping.amount` to `demo.shipping.amount`,
+  `app.shipping.cost.total` to `demo.shipping.cost.total`,
+  `app.shipping.items_count` to `demo.shipping.items_count`,
+  `app.shipping.tracking.id` to `demo.shipping.tracking.id`,
+  `app.quote.items.count` to `demo.shipping.quote.items_count`, and
+  `app.quote.cost.total` to `demo.shipping.quote.cost.total` across checkout,
+  quote, shipping, and telemetry schema.
+  ([#3391](https://github.com/open-telemetry/opentelemetry-demo/pull/3391))
+* [telemetry] Rename exchange, user context, recommendation, notification, and
+  synthetic-request telemetry attributes and metrics:
+  `app.currency.conversion.from` to `demo.exchange.from`,
+  `app.currency.conversion.to` to `demo.exchange.to`,
+  `app.user.id` to the semconv `user.id` (removed from the demo schema),
+  `app.user.currency` to `demo.user_context.selected_currency`,
+  `app.loyalty.level` to `demo.user_context.loyalty_level`,
+  `app.recommendation.cache_enabled` to `demo.feature_flag.recommendation_cache`,
+  `app.cache_hit` to `demo.recommendation.cache_hit`,
+  `app_recommendations_counter` to `demo.recommendation.requests`,
+  `app.email.recipient` to `demo.notification.recipient`,
+  `app.confirmation.counter` to `demo.notification.confirmations`, and
+  `app.synthetic_request` to `demo.synthetic_request` across currency,
+  checkout, recommendation, email, load-generator, frontend, and telemetry
+  schema.
+  ([#3393](https://github.com/open-telemetry/opentelemetry-demo/pull/3393))
+* [AI Agents] Added guidance for AI Agents
+  ([#3404](https://github.com/open-telemetry/opentelemetry-demo/pull/3404))
+* [collector] Add resource attributes to `resourcedetection/processor` and
+  updated Grafana dashboards.
+  ([#3417](https://github.com/open-telemetry/opentelemetry-demo/pull/3417))
+* [make] Fix `SERVICE=` alias for `build`, `restart`, and `redeploy` targets
+  so the documented uppercase form actually dispatches to a single service,
+  and clean up the no-arg error message that was being mangled by backticks.
+  ([#3422](https://github.com/open-telemetry/opentelemetry-demo/pull/3422))
+* [telemetry] Clean up remaining demo telemetry naming leftovers from
+  [#3267](https://github.com/open-telemetry/opentelemetry-demo/issues/3267):
+  document Ad service metric `demo.ad.requests`, rename the shipping items
+  metric to `demo.shipping.items_shipped`, and replace the `currency_code`
+  attribute on `demo.exchange.conversions` with `demo.exchange.to`.
+  ([#3435](https://github.com/open-telemetry/opentelemetry-demo/pull/3435))
+* [grafana] Update the cart exemplars dashboard to use the renamed
+  `demo_cart_*` Prometheus metrics.
+  ([#3436](https://github.com/open-telemetry/opentelemetry-demo/pull/3436))
+* [telemetry-docs] Fix the `attr_category` macro in the service template
+  (`service.md.j2`) to bucket attributes by their current `demo.*` prefixes
+  instead of the old `app.*` ones.
+  ([#3440](https://github.com/open-telemetry/opentelemetry-demo/pull/3440))
+* [telemetry-schema] Move ad attributes into a dedicated schema domain.
+  ([#3454](https://github.com/open-telemetry/opentelemetry-demo/pull/3454))
+* [telemetry-schema] Split exchange, feature flag, recommendation, and request
+  attributes into dedicated schema domains.
+  ([#3482](https://github.com/open-telemetry/opentelemetry-demo/pull/3482))
+* [telemetry] Split cart and payment attributes out of the order telemetry
+  schema into their own domain files.
+  ([#3484](https://github.com/open-telemetry/opentelemetry-demo/pull/3484))
+* [chore] Add health check to services
+  ([#3487](https://github.com/open-telemetry/opentelemetry-demo/pull/3487))
+* [fraud-detection] fix gRPC service files dropped from the shadow jar by
+  setting `duplicatesStrategy` to `INCLUDE`, restoring the DNS name resolver
+  registration needed to connect to flagd
+  ([#3501](https://github.com/open-telemetry/opentelemetry-demo/pull/3501))
+* [agent] Add Agent, MCP and ChatBot to Otel Demo application.
+    Agent - Langgraph ReAct agent which can accept user requests then with the
+    help of LLM call, it identifies the right set of tools. Agent also has an
+    LLM response caching feature.
+    MCP - Agent can be configured to use MCP tools or native langgraph tools to
+    interact with demo application.
+    Chatbot - facilitates an interactive UI for users to send requests to agent.
+    ([#3455](https://github.com/open-telemetry/opentelemetry-demo/pull/3455))
 
 ## 2.2.0
 
@@ -583,7 +783,7 @@ the release.
   ([#1115](https://github.com/open-telemetry/opentelemetry-demo/pull/1115))
 * Set metric description to blank for rpc.server.duration and queueSize
   ([#1120](https://github.com/open-telemetry/opentelemetry-demo/pull/1120))
-* sluggify Grafana dashboard name
+* slugify Grafana dashboard name
   ([#1121](https://github.com/open-telemetry/opentelemetry-demo/pull/1121))
 * [kafka frauddetection adservice] update java agent versions
   ([#1132](https://github.com/open-telemetry/opentelemetry-demo/pull/1132))
