@@ -1,9 +1,12 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use actix_web::{App, HttpServer};
+use actix_web::{web, App, HttpResponse, HttpServer};
 use json_subscriber;
+use open_feature::provider::FeatureProvider;
+use open_feature_flagd::{FlagdOptions, FlagdProvider};
 use std::env;
+use std::sync::Arc;
 use tracing::info;
 
 mod shipping_service;
@@ -34,8 +37,23 @@ async fn main() -> std::io::Result<()> {
         message = "Shipping service is running"
     );
 
-    HttpServer::new(|| App::new().service(get_quote).service(ship_order))
-        .bind(&addr)?
-        .run()
-        .await
+    let provider = FlagdProvider::new(FlagdOptions {
+        cache_settings: None,
+        ..Default::default()
+    })
+    .await
+    .expect("Failed to initialize flagd provider");
+
+    let flag_provider = web::Data::from(Arc::new(provider) as Arc<dyn FeatureProvider>);
+
+    HttpServer::new(move || {
+        App::new()
+            .app_data(flag_provider.clone())
+            .service(get_quote)
+            .service(ship_order)
+            .route("/health", web::get().to(|| async { HttpResponse::Ok().finish() }))
+    })
+    .bind(&addr)?
+    .run()
+    .await
 }

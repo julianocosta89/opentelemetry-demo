@@ -11,6 +11,8 @@ import io.grpc.*;
 import io.grpc.health.v1.HealthCheckResponse.ServingStatus;
 import io.grpc.protobuf.services.*;
 import io.grpc.stub.StreamObserver;
+import io.prometheus.metrics.core.metrics.Counter;
+import io.prometheus.metrics.exporter.httpserver.HTTPServer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,6 +45,18 @@ public final class AdService {
 
   private Server server;
   private HealthStatusManager healthMgr;
+  private HTTPServer prometheusServer;
+
+  // DEMO: this counter and its `/metrics` HTTP exporter use the Prometheus
+  // Java client library. It is here to illustrate how non-OTel custom metrics
+  // (e.g. existing Prometheus instrumentation that an organization already
+  // owns) can be exposed and scraped independently of any tracing/metrics SDK.
+  private static final Counter adsServedCounter =
+      Counter.builder()
+          .name("demo_ad_served_total")
+          .help("Total number of ads served, labeled by category")
+          .labelNames("category")
+          .register();
 
   private static final AdService service = new AdService();
 
@@ -54,12 +68,16 @@ public final class AdService {
                     () ->
                         new IllegalStateException(
                             "environment vars: AD_PORT must not be null")));
+    int prometheusPort =
+        Integer.parseInt(Optional.ofNullable(System.getenv("AD_PROMETHEUS_PORT")).orElse("9465"));
+    prometheusServer = HTTPServer.builder().port(prometheusPort).buildAndStart();
+    logger.info(
+        "Prometheus metrics endpoint started, listening on " + prometheusServer.getPort() + "/metrics");
     healthMgr = new HealthStatusManager();
 
-    // Create a flagd instance with OpenTelemetry
+    // Create a flagd instance
     FlagdOptions options =
         FlagdOptions.builder()
-            .withGlobalTelemetry(true)
             .build();
 
     FlagdProvider flagdProvider = new FlagdProvider(options);
@@ -90,6 +108,9 @@ public final class AdService {
     if (server != null) {
       healthMgr.clearStatus("");
       server.shutdown();
+    }
+    if (prometheusServer != null) {
+      prometheusServer.stop();
     }
   }
 
@@ -178,6 +199,7 @@ public final class AdService {
 
   private Collection<Ad> getAdsByCategory(String category) {
     Collection<Ad> ads = adsMap.get(category);
+    adsServedCounter.labelValues(category).inc(ads.size());
     return ads;
   }
 
@@ -191,6 +213,7 @@ public final class AdService {
     for (int i = 0; i < MAX_ADS_TO_SERVE; i++) {
       ads.add(Iterables.get(allAds, random.nextInt(allAds.size())));
     }
+    adsServedCounter.labelValues("random").inc(ads.size());
 
     return ads;
   }

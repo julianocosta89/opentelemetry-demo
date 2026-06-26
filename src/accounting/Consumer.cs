@@ -3,6 +3,7 @@
 
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using Oteldemo;
 using Microsoft.EntityFrameworkCore;
 
@@ -128,6 +129,10 @@ internal class Consumer : IDisposable
             };
             dbContext.Add(shipping);
             dbContext.SaveChanges();
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            _logger.LogInformation("Duplicate order received, skipping.");
         }
         catch (Exception ex)
         {

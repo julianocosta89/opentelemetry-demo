@@ -66,10 +66,6 @@ build:
     context: .
     docker:
       dockerfile: src/payment/Dockerfile
-  - image: ghcr.io/julianocosta89/postgresql-no-otel
-    context: .
-    docker:
-      dockerfile: src/postgres/Dockerfile
   - image: ghcr.io/julianocosta89/product-catalog-no-otel
     context: .
     docker:

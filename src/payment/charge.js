@@ -21,13 +21,13 @@ function random(arr) {
 module.exports.charge = async request => {
   await OpenFeature.setProviderAndWait(flagProvider);
 
-  const numberVariant =  await OpenFeature.getClient().getNumberValue("paymentFailure", 0);
+  const numberVariant = await OpenFeature.getClient().getNumberValue("paymentFailure", 0);
 
   if (numberVariant > 0) {
-    // n% chance to fail with app.loyalty.level=gold
+    // n% chance to fail with loyalty_level=gold
     if (Math.random() < numberVariant) {
-      logger.info({ 'app.loyalty.level': 'gold' }, 'Payment request failed. Invalid token.');
-      throw new Error('Payment request failed. Invalid token. app.loyalty.level=gold');
+      logger.info({ 'loyalty_level': 'gold' }, 'Payment request failed. Invalid token.');
+      throw new Error('Payment request failed. Invalid token. loyalty_level=gold');
     }
   }
 

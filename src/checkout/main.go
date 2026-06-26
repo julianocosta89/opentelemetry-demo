@@ -30,6 +30,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
+	flags "github.com/open-telemetry/opentelemetry-demo/src/checkout/flags"
 	pb "github.com/open-telemetry/opentelemetry-demo/src/checkout/genproto/oteldemo"
 	"github.com/open-telemetry/opentelemetry-demo/src/checkout/kafka"
 	"github.com/open-telemetry/opentelemetry-demo/src/checkout/money"
@@ -38,6 +39,8 @@ import (
 //go:generate go install google.golang.org/protobuf/cmd/protoc-gen-go
 //go:generate go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 //go:generate protoc --go_out=./ --go-grpc_out=./ --proto_path=../../pb ../../pb/demo.proto
+//go:generate go install github.com/open-feature/cli/cmd/openfeature@v0.4.0
+//go:generate openfeature generate -o flags --package-name flags go
 
 var logger *slog.Logger
 
@@ -74,10 +77,14 @@ func main() {
 
 	provider, err := flagd.NewProvider()
 	if err != nil {
-		logger.Error(fmt.Sprintf("Error creating flagd provider: %v", err))
+		logger.Error("Error creating flagd provider", slog.Any("error", err))
 	}
 
-	openfeature.SetProvider(provider)
+	err = openfeature.SetProvider(provider)
+	if err != nil {
+		logger.Error("Failed to set flagd as the provider", slog.Any("error", err))
+	}
+	defer openfeature.Shutdown()
 
 	svc := new(checkout)
 
@@ -127,7 +134,7 @@ func main() {
 		logger.Error(err.Error())
 	}
 
-	var srv = grpc.NewServer()
+	srv := grpc.NewServer()
 	pb.RegisterCheckoutServiceServer(srv, svc)
 
 	healthcheck := health.NewServer()
@@ -184,12 +191,14 @@ func (cs *checkout) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (
 
 	prep, err := cs.prepareOrderItemsAndShippingQuoteFromCart(ctx, req.UserId, req.UserCurrency, req.Address)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	total := &pb.Money{CurrencyCode: req.UserCurrency,
-		Units: 0,
-		Nanos: 0}
+	total := &pb.Money{
+		CurrencyCode: req.UserCurrency,
+		Units:        0,
+		Nanos:        0,
+	}
 	total = money.Must(money.Sum(total, prep.shippingCostLocalized))
 	for _, it := range prep.orderItems {
 		multPrice := money.MultiplySlow(it.Cost, uint32(it.GetItem().GetQuantity()))
@@ -211,7 +220,7 @@ func (cs *checkout) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (
 	if err != nil {
 		return nil, status.Errorf(codes.Unavailable, "shipping error: %+v", err)
 	}
-	
+
 	_ = cs.emptyUserCart(ctx, req.UserId)
 
 	orderResult := &pb.OrderResult{
@@ -228,11 +237,11 @@ func (cs *checkout) PlaceOrder(ctx context.Context, req *pb.PlaceOrderRequest) (
 	logger.LogAttrs(
 		ctx,
 		slog.LevelInfo, "order placed",
-		slog.String("app.order.id", orderID.String()),
-		slog.Float64("app.shipping.amount", shippingCostFloat),
-		slog.Float64("app.order.amount", totalPriceFloat),
-		slog.Int("app.order.items.count", len(prep.orderItems)),
-		slog.String("app.shipping.tracking.id", shippingTrackingID),
+		slog.String("demo.order.id", orderID.String()),
+		slog.Float64("demo.shipping.amount", shippingCostFloat),
+		slog.Float64("demo.order.amount", totalPriceFloat),
+		slog.Int("demo.order.items.count", len(prep.orderItems)),
+		slog.String("demo.shipping.tracking.id", shippingTrackingID),
 	)
 
 	if err := cs.sendOrderConfirmation(ctx, req.Email, orderResult); err != nil {
@@ -258,7 +267,6 @@ type orderPrep struct {
 }
 
 func (cs *checkout) prepareOrderItemsAndShippingQuoteFromCart(ctx context.Context, userID, userCurrency string, address *pb.Address) (orderPrep, error) {
-
 	var out orderPrep
 	cartItems, err := cs.getUserCart(ctx, userID)
 	if err != nil {
@@ -366,7 +374,8 @@ func (cs *checkout) prepOrderItems(ctx context.Context, items []*pb.CartItem, us
 		}
 		out[i] = &pb.OrderItem{
 			Item: item,
-			Cost: price}
+			Cost: price,
+		}
 	}
 	return out, nil
 }
@@ -374,7 +383,8 @@ func (cs *checkout) prepOrderItems(ctx context.Context, items []*pb.CartItem, us
 func (cs *checkout) convertCurrency(ctx context.Context, from *pb.Money, toCurrency string) (*pb.Money, error) {
 	result, err := cs.currencySvcClient.Convert(ctx, &pb.CurrencyConversionRequest{
 		From:   from,
-		ToCode: toCurrency})
+		ToCode: toCurrency,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert currency: %+v", err)
 	}
@@ -383,7 +393,7 @@ func (cs *checkout) convertCurrency(ctx context.Context, from *pb.Money, toCurre
 
 func (cs *checkout) chargeCard(ctx context.Context, amount *pb.Money, paymentInfo *pb.CreditCardInfo) (string, error) {
 	paymentService := cs.paymentSvcClient
-	if cs.isFeatureFlagEnabled(ctx, "paymentUnreachable") {
+	if flags.PaymentUnreachable.Value(ctx, openfeature.EvaluationContext{}) {
 		badAddress := "badAddress:50051"
 		c := mustCreateClient(badAddress)
 		paymentService = pb.NewPaymentServiceClient(c)
@@ -391,7 +401,8 @@ func (cs *checkout) chargeCard(ctx context.Context, amount *pb.Money, paymentInf
 
 	paymentResp, err := paymentService.Charge(ctx, &pb.ChargeRequest{
 		Amount:     amount,
-		CreditCard: paymentInfo})
+		CreditCard: paymentInfo,
+	})
 	if err != nil {
 		return "", fmt.Errorf("could not charge the card: %+v", err)
 	}
@@ -486,43 +497,15 @@ func (cs *checkout) sendToPostProcessor(ctx context.Context, result *pb.OrderRes
 		return
 	}
 
-	ffValue := cs.getIntFeatureFlag(ctx, "kafkaQueueProblems")
+	ffValue := flags.KafkaQueueProblems.Value(ctx, openfeature.EvaluationContext{})
 	if ffValue > 0 {
 		logger.Info("Warning: FeatureFlag 'kafkaQueueProblems' is activated, overloading queue now.")
-		for i := 0; i < ffValue; i++ {
-			go func(i int) {
+		for range ffValue {
+			go func(msg sarama.ProducerMessage) {
 				cs.KafkaProducerClient.Input() <- &msg
-				_ = <-cs.KafkaProducerClient.Successes()
-			}(i)
+				<-cs.KafkaProducerClient.Successes()
+			}(msg)
 		}
 		logger.Info(fmt.Sprintf("Done with #%d messages for overload simulation.", ffValue))
 	}
-}
-
-func (cs *checkout) isFeatureFlagEnabled(ctx context.Context, featureFlagName string) bool {
-	client := openfeature.NewClient("checkout")
-
-	// Default value is set to false, but you could also make this a parameter.
-	featureEnabled, _ := client.BooleanValue(
-		ctx,
-		featureFlagName,
-		false,
-		openfeature.EvaluationContext{},
-	)
-
-	return featureEnabled
-}
-
-func (cs *checkout) getIntFeatureFlag(ctx context.Context, featureFlagName string) int {
-	client := openfeature.NewClient("checkout")
-
-	// Default value is set to 0, but you could also make this a parameter.
-	featureFlagValue, _ := client.IntValue(
-		ctx,
-		featureFlagName,
-		0,
-		openfeature.EvaluationContext{},
-	)
-
-	return int(featureFlagValue)
 }

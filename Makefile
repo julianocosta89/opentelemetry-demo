@@ -12,8 +12,28 @@ MISSPELL = $(TOOLS_DIR)/$(MISSPELL_BINARY)
 ADDLICENSE_BINARY=bin/addlicense
 ADDLICENSE = $(TOOLS_DIR)/$(ADDLICENSE_BINARY)
 
+DOCKER_CMD ?= docker
 DOCKER_COMPOSE_CMD ?= docker compose
 DOCKER_COMPOSE_ENV=--env-file .env --env-file .env.override
+
+# Compose file layers — combine with -f flags for the desired configuration:
+#   Core (minimal):             compose.yaml
+#   Full (adds Kafka group):    compose.yaml + compose.full.yaml
+#   With extras customizations: + compose.extras.yaml (always last)
+DOCKER_COMPOSE_FILES_CORE=-f compose.yaml
+DOCKER_COMPOSE_FILES_FULL=$(DOCKER_COMPOSE_FILES_CORE) -f compose.full.yaml
+DOCKER_COMPOSE_FILES_EXTRAS=-f compose.extras.yaml
+
+# Default: full demo + extras stub
+DOCKER_COMPOSE_FILES=$(DOCKER_COMPOSE_FILES_FULL) $(DOCKER_COMPOSE_FILES_EXTRAS)
+
+# Accept either `service=` or `SERVICE=` for single-service targets (build, restart, redeploy).
+# Must be evaluated at file scope; an `ifdef SERVICE` block inside a recipe is a shell command,
+# not a Make conditional, so the alias never takes effect there.
+ifdef SERVICE
+service := $(SERVICE)
+endif
+
 
 # see https://github.com/open-telemetry/build-tools/releases for semconvgen updates
 # Keep links in semantic_conventions/README.md and .vscode/settings.json in sync!
@@ -62,6 +82,7 @@ checklicense:	$(ADDLICENSE)
 		-ignore node_modules/** \
 		-ignore .expo/** \
 		-ignore Pods/** \
+		-ignore **/extras/** \
 		-ignore **/vendor/** \
 		-ignore **/.venv/** \
 		-ignore **/dist/** \
@@ -79,6 +100,7 @@ addlicense:	$(ADDLICENSE)
 		-ignore node_modules/** \
 		-ignore .expo/** \
 		-ignore Pods/** \
+		-ignore **/extras/** \
 		-ignore **/vendor/** \
 		-ignore **/.venv/** \
 		-ignore **/dist/** \
@@ -92,7 +114,7 @@ addlicense:	$(ADDLICENSE)
 .PHONY: checklinks
 checklinks:
 	@echo "Checking links..."
-	lychee --config .lychee.toml .
+	lychee --config .lychee.toml --cache .
 
 # Run all checks in order of speed / likely failure.
 .PHONY: check
@@ -109,13 +131,19 @@ install-tools: $(MISSPELL) $(ADDLICENSE)
 	npm install
 	@echo "All tools installed"
 
+# Use to build all services, or a single service component
+# Example: make build service=frontend
 .PHONY: build
 build:
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) build
+ifneq ($(strip $(service)),)
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) build $(service)
+else
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) build
+endif
 
 .PHONY: build-and-push
 build-and-push:
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) build --push
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) build --push
 
 # Create multiplatform builder for buildx
 .PHONY: create-multiplatform-builder
@@ -133,16 +161,16 @@ remove-multiplatform-builder:
 .PHONY: build-multiplatform
 build-multiplatform:
 	# Because buildx bake does not support --env-file yet, we need to load it into the environment first.
-	set -a; . ./.env.override; set +a && docker buildx bake -f docker-compose.yml --load --set "*.platform=linux/amd64,linux/arm64"
+	set -a; . ./.env.override; set +a && docker buildx bake $(DOCKER_COMPOSE_FILES) --load --set "*.platform=linux/amd64,linux/arm64"
 
 .PHONY: build-multiplatform-and-push
 build-multiplatform-and-push:
-    # Because buildx bake does not support --env-file yet, we need to load it into the environment first.
-	set -a; . ./.env.override; set +a && docker buildx bake -f docker-compose.yml --push --set "*.platform=linux/amd64,linux/arm64"
+	# Because buildx bake does not support --env-file yet, we need to load it into the environment first.
+	set -a; . ./.env.override; set +a && docker buildx bake $(DOCKER_COMPOSE_FILES) --push --set "*.platform=linux/amd64,linux/arm64"
 
 .PHONY: clean-images
 clean-images:
-	@docker rmi $(shell docker images --filter=reference="ghcr.io/open-telemetry/demo:latest-*" -q); \
+	$(DOCKER_CMD) rmi $(shell $(DOCKER_CMD) images --filter=reference="ghcr.io/open-telemetry/demo:latest-*" -q); \
     if [ $$? -ne 0 ]; \
     then \
     	echo; \
@@ -177,7 +205,7 @@ check-clean-work-tree:
 
 .PHONY: start
 start:
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) up --force-recreate --remove-orphans --detach
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) up --force-recreate --remove-orphans --detach
 	@echo ""
 	@echo "OpenTelemetry Demo is running."
 	@echo "Go to http://localhost:8080 for the demo UI."
@@ -187,7 +215,7 @@ start:
 
 .PHONY: stop
 stop:
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) down --remove-orphans --volumes
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) down --remove-orphans --volumes
 	@echo ""
 	@echo "OpenTelemetry Demo is stopped."
 
@@ -195,39 +223,29 @@ stop:
 # Example: make restart service=frontend
 .PHONY: restart
 restart:
-# work with `service` or `SERVICE` as input
-ifdef SERVICE
-	service := $(SERVICE)
-endif
-
-ifdef service
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) stop $(service)
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) rm --force $(service)
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) create $(service)
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) start $(service)
+ifneq ($(strip $(service)),)
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) stop $(service)
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) rm --force $(service)
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) create $(service)
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) start $(service)
 else
-	@echo "Please provide a service name using `service=[service name]` or `SERVICE=[service name]`"
+	@echo "Please provide a service name using 'service=<name>' or 'SERVICE=<name>'"
 endif
 
 # Use to rebuild and restart (redeploy) a single service component
 # Example: make redeploy service=frontend
 .PHONY: redeploy
 redeploy:
-# work with `service` or `SERVICE` as input
-ifdef SERVICE
-	service := $(SERVICE)
-endif
-
-ifdef service
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) build $(service)
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) stop $(service)
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) rm --force $(service)
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) create $(service)
-	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) start $(service)
+ifneq ($(strip $(service)),)
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) build $(service)
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) stop $(service)
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) rm --force $(service)
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) create $(service)
+	$(DOCKER_COMPOSE_CMD) $(DOCKER_COMPOSE_ENV) $(DOCKER_COMPOSE_FILES) start $(service)
 else
-	@echo "Please provide a service name using `service=[service name]` or `SERVICE=[service name]`"
+	@echo "Please provide a service name using 'service=<name>' or 'SERVICE=<name>'"
 endif
 
 .PHONY: build-react-native-android
 build-react-native-android:
-	docker build -f src/react-native-app/android.Dockerfile --platform=linux/amd64 --output=. src/react-native-app
+	$(DOCKER_CMD) build -f src/react-native-app/android.Dockerfile --platform=linux/amd64 --output=. src/react-native-app

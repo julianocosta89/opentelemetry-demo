@@ -9,13 +9,13 @@
   "author": "Jonathan Lui",
   "license": "ISC",
   "dependencies": {
-    "@grpc/grpc-js": "1.14.3",
-    "@grpc/proto-loader": "0.8.0",
-    "@openfeature/flagd-provider": "0.15.0",
-    "@openfeature/server-sdk": "1.20.2",
+    "@grpc/grpc-js": "1.14.4",
+    "@grpc/proto-loader": "0.8.1",
+    "@openfeature/flagd-provider": "0.16.0",
+    "@openfeature/server-sdk": "1.22.0",
     "grpc-js-health-check": "1.2.2",
     "pino": "^10.3.1",
     "simple-card-validator": "1.1.0",
-    "uuid": "13.0.0"
+    "uuid": "14.0.1"
   }
 }

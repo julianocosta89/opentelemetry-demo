@@ -5,6 +5,8 @@ package main
 //go:generate go install google.golang.org/protobuf/cmd/protoc-gen-go
 //go:generate go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 //go:generate protoc --go_out=./ --go-grpc_out=./ --proto_path=../../pb ../../pb/demo.proto
+//go:generate go install github.com/open-feature/cli/cmd/openfeature@v0.4.0
+//go:generate openfeature generate -o flags --package-name flags go
 
 import (
 	"context"
@@ -27,6 +29,8 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+
+	flags "github.com/opentelemetry/opentelemetry-demo/src/product-catalog/flags"
 )
 
 type productCatalog struct {
@@ -78,13 +82,15 @@ func main() {
 	}()
 	provider, err := flagd.NewProvider()
 	if err != nil {
-		logger.Error(err.Error())
+		logger.Error("Error creating flagd provider", slog.Any("error", err))
 	}
+
 	err = openfeature.SetProvider(provider)
 	if err != nil {
-		logger.Error(err.Error())
+		logger.Error("Failed to set flagd as the provider", slog.Any("error", err))
 	}
-	
+	defer openfeature.Shutdown()
+
 	svc := &productCatalog{}
 	var port string
 	mustMapEnv(&port, "PRODUCT_CATALOG_PORT")
@@ -282,20 +288,20 @@ func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductReque
 	// GetProduct will fail on a specific product when feature flag is enabled
 	if p.checkProductFailure(ctx, req.Id) {
 		msg := "Error: Product Catalog Fail Feature Flag Enabled"
-		return nil, status.Errorf(codes.Internal, msg)
+		return nil, status.Error(codes.Internal, msg)
 	}
 
 	found, err := getProductFromDB(ctx, req.Id)
 	if err != nil {
 		msg := fmt.Sprintf("Product Not Found: %s", req.Id)
-		return nil, status.Errorf(codes.NotFound, msg)
+		return nil, status.Error(codes.NotFound, msg)
 	}
 
 	logger.LogAttrs(
 		ctx,
 		slog.LevelInfo, "Product Found",
-		slog.String("app.product.name", found.Name),
-		slog.String("app.product.id", req.Id),
+		slog.String("demo.product.name", found.Name),
+		slog.String("demo.product.id", req.Id),
 	)
 
 	return found, nil
@@ -307,18 +313,9 @@ func (p *productCatalog) SearchProducts(ctx context.Context, req *pb.SearchProdu
 		return nil, status.Errorf(codes.Internal, "failed to search products: %v", err)
 	}
 
-
 	return &pb.SearchProductsResponse{Results: result}, nil
 }
 
 func (p *productCatalog) checkProductFailure(ctx context.Context, id string) bool {
-	if id != "OLJCESPC7Z" {
-		return false
-	}
-
-	client := openfeature.NewClient("productCatalog")
-	failureEnabled, _ := client.BooleanValue(
-		ctx, "productCatalogFailure", false, openfeature.EvaluationContext{},
-	)
-	return failureEnabled
+	return flags.ProductCatalogFailure.Value(ctx, openfeature.NewTargetlessEvaluationContext(map[string]any{"product_id": id}))
 }

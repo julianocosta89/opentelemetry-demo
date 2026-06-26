@@ -1,0 +1,7 @@
+{
+  "upstream": "https://github.com/open-telemetry/opentelemetry-demo.git",
+  "tag": "juliano/main",
+  "tag_commit": "99fffa88f393572f5dbf4e5b2e18effcbc788085",
+  "merge_base": "0982a0268aec2f010c812fcb87ca4e6ff81be643",
+  "synced_at": "2026-06-25T12:04:28.385395+00:00"
+}

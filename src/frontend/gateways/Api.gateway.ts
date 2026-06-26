@@ -108,9 +108,6 @@ const Apis = () => ({
   },
 });
 
-/**
- * Extends all the API calls to set baggage automatically.
- */
 const ApiGateway = new Proxy(Apis(), {
   get(target, prop, receiver) {
     const originalFunction = Reflect.get(target, prop, receiver);
